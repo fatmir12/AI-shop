@@ -8,6 +8,7 @@ import com.aishop.backend.entity.Role;
 import com.aishop.backend.entity.User;
 import com.aishop.backend.repository.UserRepository;
 import com.aishop.backend.security.JwtService;
+import com.aishop.backend.dto.RefreshTokenRequest;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -26,17 +27,21 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final long expirationSeconds;
+    private final RefreshTokenService refreshTokenService;
+
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
+            RefreshTokenService refreshTokenService,
             @Value("${app.jwt.expiration-seconds}") long expirationSeconds) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.expirationSeconds = expirationSeconds;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -67,7 +72,7 @@ public class AuthService {
         return createAuthResponse(savedUser);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
 
         String email = normalizeEmail(request.email());
@@ -85,12 +90,30 @@ public class AuthService {
         return createAuthResponse(user);
     }
 
-    private AuthResponse createAuthResponse(User user) {
 
-        String token = jwtService.generateToken(user);
+
+    public AuthResponse refresh(
+            RefreshTokenRequest request) {
+
+        RefreshTokenService.RotationResult result =
+                refreshTokenService.rotateRefreshToken(
+                        request.refreshToken()
+                );
+
+        if (result == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Invalid or expired refresh token"
+            );
+        }
+
+        User user = result.user();
+
+        String accessToken = jwtService.generateToken(user);
 
         return new AuthResponse(
-                token,
+                accessToken,
+                result.refreshToken(),
                 "Bearer",
                 expirationSeconds,
                 user.getId(),
@@ -98,6 +121,35 @@ public class AuthService {
                 user.getRole().name()
         );
     }
+
+    public void logout(RefreshTokenRequest request) {
+
+        refreshTokenService.revokeRefreshToken(
+                request.refreshToken()
+        );
+    }
+
+
+
+
+    private AuthResponse createAuthResponse(User user) {
+
+        String accessToken = jwtService.generateToken(user);
+
+        String refreshToken =
+                refreshTokenService.createRefreshToken(user);
+
+        return new AuthResponse(
+                accessToken,
+                refreshToken,
+                "Bearer",
+                expirationSeconds,
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name()
+        );
+    }
+
 
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
