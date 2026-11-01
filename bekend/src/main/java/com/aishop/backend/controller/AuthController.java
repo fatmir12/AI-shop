@@ -3,6 +3,7 @@ package com.aishop.backend.controller;
 
 import com.aishop.backend.dto.AuthResponse;
 import com.aishop.backend.dto.LoginRequest;
+import com.aishop.backend.dto.RefreshTokenRequest;
 import com.aishop.backend.dto.RegisterRequest;
 import com.aishop.backend.service.AuthService;
 
@@ -36,4 +37,25 @@ public class AuthController {
 
         return ResponseEntity.ok(authService.login(request));
     }
+
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(
+            @Valid @RequestBody RefreshTokenRequest request) {
+
+        return ResponseEntity.ok(
+                authService.refresh(request)
+        );
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @Valid @RequestBody RefreshTokenRequest request) {
+
+        authService.logout(request);
+
+        return ResponseEntity.noContent().build();
+    }
+
+
 }
