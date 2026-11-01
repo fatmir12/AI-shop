@@ -18,11 +18,19 @@ public class SecurityConfig {
         http
                 // Privremeno za razvoj stateless REST API-ja
                 .csrf(csrf -> csrf.disable())
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/categories", "/api/categories/**",
+                                "/api/products", "/api/products/**"
+                        ).permitAll()
+
                         .anyRequest().authenticated()
                 )
+
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
