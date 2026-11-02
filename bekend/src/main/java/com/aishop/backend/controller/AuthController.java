@@ -31,12 +31,18 @@ public class AuthController {
                 .body(authService.register(request));
     }
 
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
             @Valid @RequestBody LoginRequest request) {
 
-        return ResponseEntity.ok(authService.login(request));
+        System.out.println("LOGIN CONTROLLER POZVAN");
+
+        return ResponseEntity.ok(
+                authService.login(request)
+        );
     }
+
 
 
     @PostMapping("/refresh")
