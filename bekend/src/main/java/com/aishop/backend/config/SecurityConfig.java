@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/health")
                         .permitAll()
 
-                        // Registracija, prijava i refresh token
+                        // Registracija, login, refresh i logout
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/register",
@@ -93,7 +93,32 @@ public class SecurityConfig {
                                 "/api/products/**"
                         ).hasRole("ADMIN")
 
-                        // Svi ostali endpointi zahtijevaju autentifikaciju
+                        // ORDERS - kreiranje narudzbe
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/orders"
+                        ).authenticated()
+
+                        // ORDERS - pregled vlastitih narudzbi
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/orders/my",
+                                "/api/orders/my/**"
+                        ).authenticated()
+
+                        // ORDERS - pregled svih narudzbi (ADMIN)
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/orders"
+                        ).hasRole("ADMIN")
+
+                        // ORDERS - promjena statusa (ADMIN)
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/orders/*/status"
+                        ).hasRole("ADMIN")
+
+                        // Svi ostali endpointi zahtijevaju prijavu
                         .anyRequest().authenticated()
                 )
 
