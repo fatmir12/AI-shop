@@ -75,6 +75,7 @@ public class AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
 
+        System.out.println("LOGIN SERVICE POZVAN");
         String email = normalizeEmail(request.email());
 
         User user = userRepository.findByEmail(email)
