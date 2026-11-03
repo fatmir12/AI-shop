@@ -35,6 +35,40 @@ public class AiChatController {
             );
         }
 
+        // 1. Strukturirana operacija nad korpom
+        if (request.cartAction() != null) {
+
+            Long userId;
+
+            try {
+                userId = Long.valueOf(jwt.getSubject());
+
+                if (userId <= 0) {
+                    throw new NumberFormatException(
+                            "Invalid user ID"
+                    );
+                }
+
+            } catch (NumberFormatException ex) {
+                throw new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Invalid token subject"
+                );
+            }
+
+            System.out.println(
+                    "AI CHAT preparing cart action: "
+                            + request.cartAction()
+                            + ", userId=" + userId
+            );
+
+            return aiChatService.prepareCartAction(
+                    userId,
+                    request.cartAction()
+            );
+        }
+
+        // 2. Obicni AI razgovor preko Ollame i MCP-a
         String reply = aiChatService.chat(
                 request.message(),
                 jwt.getTokenValue()
