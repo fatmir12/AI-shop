@@ -126,3 +126,11 @@ dialog[open]::backdrop { animation: motion-fade 200ms ease; }
   .category-card:hover, .btn:hover, .icon-btn:hover,
   .assistant-bar button:hover:not(:disabled) svg { transform: none !important; }
 }
+.catalog-results { min-width: 0; }
+.catalog-result-item { min-width: 0; display: flex; }
+.catalog-result-item > .product-card { width: 100%; }
+html { scroll-behavior: smooth; }
+:root { --anchor-offset: 140px; }
+[id] { scroll-margin-block-start: var(--anchor-offset); }
+@media (max-width: 580px) { :root { --anchor-offset: 90px; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

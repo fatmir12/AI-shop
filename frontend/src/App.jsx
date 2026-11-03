@@ -27,12 +27,16 @@ import { Missing, Loading } from './components/ui';
 import { useApp } from './app/context';
 function Scroll() {
   const {
-    pathname
+    pathname, hash
   } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (hash) {
+      let targetId
+      try { targetId = decodeURIComponent(hash.slice(1)) } catch { targetId = hash.slice(1) }
+      document.getElementById(targetId)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' })
+    } else window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.title = `AIShop · ${pathname === '/' ? 'Prodavnica' : 'Katalog i korisnički račun'}`;
-  }, [pathname]);
+  }, [pathname, hash]);
   return null;
 }
 function ProductRoute() {
