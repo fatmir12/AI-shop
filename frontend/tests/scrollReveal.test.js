@@ -38,7 +38,7 @@ test('cards reveal once, bounded stagger, and observer releases revealed cards',
   const observer = env.observers[0]
   assert.equal(observer.options.threshold, 0.12)
   observer.enter(...cards)
-  assert.deepEqual(cards.map(card => card.animations[0].options.delay), [0, 40, 80, 120, 120, 120])
+  assert.deepEqual(cards.map(card => card.animations[0].options.delay), [0, 75, 150, 210, 210, 210])
   assert.equal(observer.targets.size, 0)
   observer.enter(...cards)
   assert.ok(cards.every(card => card.animations.length === 1))

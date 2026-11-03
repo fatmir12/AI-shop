@@ -1,9 +1,10 @@
-import { catalogMotion } from './catalogMotion.js'
-export function createScrollReveal({ root, seen = new WeakSet(), duration = 360, distance = 10 } = {}) {
+import { motion } from './motion.js'
+export function createScrollReveal({ root, seen = new WeakSet(), duration = motion.scrollReveal, initialDuration = motion.productEntrance, distance = motion.distance } = {}) {
   const media = window.matchMedia('(prefers-reduced-motion: reduce)')
   const waiting = new Set()
   const running = new Map()
   let stopped = false
+  let initialBatch = true
   const finish = element => {
     seen.add(element)
     waiting.delete(element)
@@ -23,9 +24,9 @@ export function createScrollReveal({ root, seen = new WeakSet(), duration = 360,
           { opacity: 0, transform: `translateY(${distance}px)` },
           { opacity: 1, transform: 'translateY(0)' },
         ], {
-          duration,
-          delay: Math.min(batchIndex++ * 40, 120),
-          easing: catalogMotion.easing,
+          duration: initialBatch ? initialDuration : duration,
+          delay: Math.min(batchIndex++ * motion.stagger, motion.maxStagger),
+          easing: motion.entranceEasing,
           fill: 'backwards',
         })
         running.set(element, animation)
@@ -36,7 +37,8 @@ export function createScrollReveal({ root, seen = new WeakSet(), duration = 360,
         finish(element)
       }
     }
-  }, { threshold: 0.12, rootMargin: '0px 0px 32px 0px' }) : null
+    initialBatch = false
+  }, { threshold: 0.12, rootMargin: '0px 0px 96px 0px' }) : null
   const focus = event => {
     for (const element of [...waiting, ...running.keys()]) {
       if (element.contains(event.target)) finish(element)

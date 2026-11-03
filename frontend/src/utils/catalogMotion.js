@@ -1,10 +1,11 @@
+import { motion } from './motion.js'
 export const catalogMotion = {
-  exit: 120,
-  entrance: 300,
-  stagger: 40,
-  maxStagger: 200,
-  distance: 10,
-  easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+  exit: motion.categoryExit,
+  entrance: motion.categoryEntrance,
+  stagger: motion.stagger,
+  maxStagger: motion.maxStagger,
+  distance: motion.distance,
+  easing: motion.entranceEasing,
 }
 export function catalogResultKey(products, state) {
   return JSON.stringify([state, state === 'products' ? products.map(product => String(product.id)) : []])

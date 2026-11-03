@@ -12,7 +12,7 @@ test('ordered visible IDs drive transitions, unrelated product updates do not', 
   assert.notEqual(catalogResultKey([], 'error'), catalogResultKey([], 'empty'))
 })
 test('stagger remains bounded even for long lists', () => {
-  assert.deepEqual([0, 1, 2, 3, 4, 5, 100].map(catalogStagger), [0, 40, 80, 120, 160, 200, 200])
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 100].map(catalogStagger), [0, 75, 150, 210, 210, 210, 210])
 })
 test('finishing an exit commits the latest selection rather than its initial selection', async () => {
   let finish

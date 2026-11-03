@@ -1,3 +1,4 @@
+import { motion } from '../utils/motion.js';
 import { createScrollReveal } from '../utils/scrollReveal.js';
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -9,7 +10,7 @@ export default function MotionEffects() {
     if (preference.matches || !window.IntersectionObserver || !Element.prototype.animate) return
     const animations = new Set()
     const animate = (element, distance, duration) => {
-      const animation = element.animate([{ opacity: 0.35, transform: `translateY(${distance}px)` }, { opacity: 1, transform: 'translateY(0)' }], { duration, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' })
+      const animation = element.animate([{ opacity: 0.35, transform: `translateY(${distance}px)` }, { opacity: 1, transform: 'translateY(0)' }], { duration, easing: motion.entranceEasing })
       animations.add(animation)
       animation.finished.catch(() => {}).finally(() => animations.delete(animation))
     }
@@ -22,7 +23,7 @@ export default function MotionEffects() {
         observer.unobserve(entry.target)
         if (revealed.current.has(entry.target)) continue
         revealed.current.add(entry.target)
-        animate(entry.target, 7, 320)
+        animate(entry.target, motion.distance, motion.scrollReveal)
       }
     }, { threshold: 0.12 })
     const products = createScrollReveal({ root, seen: revealed.current })
@@ -30,7 +31,7 @@ export default function MotionEffects() {
     const observe = () => {
       const main = root.querySelector('main')
       if (!main) return
-      if (!transitioned) { animate(main, 4, 240); transitioned = true }
+      if (!transitioned) { animate(main, motion.pageDistance, motion.page); transitioned = true }
       main.querySelectorAll('.home > .section, .stats-grid').forEach(section => {
         if (section.querySelector('.products')) return
         if (observed.has(section) || revealed.current.has(section)) return

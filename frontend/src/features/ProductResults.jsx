@@ -1,3 +1,4 @@
+import { motion } from '../utils/motion.js';
 import { createScrollReveal } from '../utils/scrollReveal.js';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Empty, ErrorState, Loading } from '../components/ui'
@@ -34,7 +35,7 @@ export default function ProductResults({ products, pending, error, retry, render
     previousHeight.current = element.getBoundingClientRect().height
     const animation = element.animate([{ opacity: 1 }, { opacity: 0 }], {
       duration: catalogMotion.exit,
-      easing: 'ease-out',
+      easing: motion.exitEasing,
       fill: 'forwards',
     })
     return afterAnimation(animation, commitLatest)
@@ -50,7 +51,7 @@ export default function ProductResults({ products, pending, error, retry, render
       return
     }
     const animations = []
-    const reveal = createScrollReveal({ root: element, seen: appearance.current.seen, duration: 360, distance: catalogMotion.distance })
+    const reveal = createScrollReveal({ root: element, seen: appearance.current.seen, initialDuration: previousHeight.current === null ? motion.productEntrance : catalogMotion.entrance, distance: catalogMotion.distance })
     cards.forEach(card => reveal.observe(card))
     if (!cards.length) {
       const body = element.querySelector('.catalog-result-body')
@@ -62,7 +63,7 @@ export default function ProductResults({ products, pending, error, retry, render
       animations.push(element.animate([
         { height: `${oldHeight}px`, overflow: 'clip' },
         { height: `${nextHeight}px`, overflow: 'clip' },
-      ], { duration: 220, easing: catalogMotion.easing }))
+      ], { duration: motion.layout, easing: catalogMotion.easing }))
     }
     previousHeight.current = null
     return () => { reveal.disconnect(); animations.forEach(animation => animation.cancel()) }

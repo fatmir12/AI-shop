@@ -8,7 +8,7 @@ import AIAssistantBar from './AIAssistantBar.jsx';
 import { useCategories } from '../features/products.jsx';
 import { isMock } from '../services';
 function Logo() {
-  return <Link to="/" className="logo"><span><Sparkles size={22} fill="currentColor" /></span>AIShop<span className="logo-dot">.</span></Link>;
+  return <Link to="/" className="logo" aria-label="AIShop — početna stranica"><img className="brand-image" src="/aishop-logo-transparent.png" alt="AIShop" width="120" height="80" fetchPriority="high" /></Link>;
 }
 export function StoreLayout() {
   const {

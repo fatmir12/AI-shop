@@ -1,3 +1,4 @@
+import { motion } from '../utils/motion.js';
 import { statusLabel } from '../i18n/bs.js';
 import { t } from "../i18n/bs.js";
 import { useEffect, useRef } from 'react';
@@ -42,7 +43,7 @@ export function Modal({
     if (!dialog || dismissing.current) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !dialog.animate) { close(); return; }
     dismissing.current = true;
-    const animation = dialog.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }], { duration: 160, easing: 'ease-out' });
+    const animation = dialog.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }], { duration: motion.modalExit, easing: motion.exitEasing });
     animation.finished.then(() => { if (dialog.isConnected) close(); }).catch(() => {}).finally(() => { dismissing.current = false; });
   };
   return <dialog ref={ref} onCancel={event => { event.preventDefault(); dismiss(); }} onClick={e => {
