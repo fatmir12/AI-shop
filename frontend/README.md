@@ -9,7 +9,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open the URL printed by Vite (normally http://localhost:5173). No backend is needed in the default mock mode.
+Open the URL printed by Vite (normally http://localhost:5173). For standalone development, select mock mode in `.env.local`. The checked-in default is API mode.
 
 | Development-only account | Email | Password |
 | --- | --- | --- |
@@ -48,14 +48,12 @@ npm run preview
 
 There are no application TypeScript files or TypeScript build/lint dependencies. Input and API response contracts use Zod. Build output is in `dist/`.
 
-## Backend mode
+## Local integration
 
-Set `VITE_DATA_SOURCE=api` in `.env.local` and restart Vite. The existing `/api` proxy forwards to http://localhost:8081. Product/category CRUD, bearer authentication, server carts and order history/status adapters follow the actual Spring Boot contracts. Missing endpoints throw explicit errors; API mode never falls back to mocks.
+API mode is the checked-in default (`.env`): React calls the Spring Boot backend on port 8081 through the Vite proxy. Follow [../LOCAL_SETUP.md](../LOCAL_SETUP.md) for Java 25, SQL Server, Flyway categories/optional products, Ollama and MCP setup. Register real accounts in API mode; the mock credentials above do not exist in SQL Server.
 
-See [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md) for exact endpoints, schemas, security details and missing AI, shipping, profile, recovery and user-management contracts. API authentication is memory-only, so a page reload requires signing in again. API checkout is blocked until shipping persistence is agreed with the backend team.
+To develop independently, put `VITE_DATA_SOURCE=mock` in `.env.local` and restart Vite. Mock mode needs no backend. API mode never falls back to mock data. API tokens are memory-only, so reload requires login. Chat history is separated by source/user.
 
-For production hosting, configure an SPA index fallback and `/api` reverse proxy. External image URLs have a local fallback. Mock storage can be reset by removing only localStorage keys beginning with `aishop.`.
+See [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md) for actual endpoint contracts, AI proposals and confirmation semantics. API checkout creates a real SQL order with POST /orders and explicitly omits shipping/payment. The AI assistant calls Spring Boot, which owns Ollama and MCP communication; the browser never calls them directly.
 
-## Bosnian catalog redesign
-
-The storefront and admin interface use centralized Bosnian translations in `src/i18n/bs.js`. The taxonomy is exactly Laptopi, Telefoni, Slušalice, Tastature and Miševi; mock category management is read-only. See `src/services/categories.js` for stable mock IDs and the database DTO mapping. The compact blue assistant bar forwards UUID-tagged requests to the existing chat through router state. No backend is needed for guest mock conversations.
+Frontend lint, tests and builds pass locally. Full live SQL Server/Ollama acceptance remains to be run on the teammate's laptop. Existing design, URL category IDs, animations and reduced-motion behavior remain in place.

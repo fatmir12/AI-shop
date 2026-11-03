@@ -82,6 +82,13 @@ export const authSchema = z.object({
   email: z.email(),
   role: roleSchema
 });
+export const pendingActionSchema = z.object({
+  actionId: z.string().uuid(), type: z.enum(['ADD', 'REMOVE', 'UPDATE']),
+  productId: id.nullish(), itemId: id.nullish(), quantity: quantitySchema.nullish(),
+  expiresAt: z.string().datetime(), status: z.literal('PENDING_CONFIRMATION'),
+})
+export const aiResponseSchema = z.object({ reply: z.string(), pendingAction: pendingActionSchema.nullish(), pendingActions: z.array(pendingActionSchema).optional() })
+export const confirmationSchema = z.object({ message: z.string(), cart: cartSchema })
 export function validate(schema, input) {
   const result = schema.safeParse(input);
   if (!result.success) throw new Error(result.error.issues.map(issue => `${'Unos'}: ${issue.message}`).join(' '));
@@ -97,8 +104,8 @@ export function withValidation(adapter) {
     saveCategory: (input, id) => adapter.saveCategory(validate(categoryRequestSchema, input), id),
     addCart: (productId, quantity) => adapter.addCart(productId, validate(quantitySchema, quantity)),
     updateCart: (id, quantity) => adapter.updateCart(id, validate(quantitySchema, quantity)),
-    checkout: input => adapter.checkout(validate(shippingSchema, input)),
+    checkout: input => adapter.checkout(input == null ? undefined : validate(shippingSchema, input)),
     status: (id, status) => adapter.status(id, validate(statusSchema, status)),
-    chat: input => adapter.chat(validate(z.string().trim().min(1).max(1000), input))
+    chat: (input, options) => adapter.chat(validate(z.string().trim().min(1).max(2000), input), options)
   };
 }

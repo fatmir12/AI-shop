@@ -52,7 +52,8 @@ public class CartActionMcpTools {
                 ActionType.ADD,
                 productId,
                 null,
-                quantity
+                quantity,
+                (String) exchange.transportContext().get("chatRequestId")
         );
 
         return toProposal(action);
@@ -82,7 +83,8 @@ public class CartActionMcpTools {
                 ActionType.REMOVE,
                 null,
                 itemId,
-                null
+                null,
+                (String) exchange.transportContext().get("chatRequestId")
         );
 
         return toProposal(action);
@@ -120,7 +122,8 @@ public class CartActionMcpTools {
                 ActionType.UPDATE,
                 null,
                 itemId,
-                quantity
+                quantity,
+                (String) exchange.transportContext().get("chatRequestId")
         );
 
         return toProposal(action);

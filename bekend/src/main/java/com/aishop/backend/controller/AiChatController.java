@@ -68,12 +68,10 @@ public class AiChatController {
             );
         }
 
-        // 2. Obicni AI razgovor preko Ollame i MCP-a
-        String reply = aiChatService.chat(
-                request.message(),
-                jwt.getTokenValue()
-        );
-
-        return new AiChatResponse(reply);
+        try {
+            return aiChatService.chat(request.message(), jwt.getTokenValue(), Long.valueOf(jwt.getSubject()), request.history());
+        } catch (NumberFormatException ex) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token subject");
+        }
     }
 }

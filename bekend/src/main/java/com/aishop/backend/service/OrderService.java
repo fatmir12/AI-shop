@@ -53,7 +53,7 @@ public class OrderService {
                         "User not found"
                 ));
 
-        ShoppingCart cart = cartRepository.findByUserId(userId)
+        ShoppingCart cart = cartRepository.findForCheckout(userId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "Shopping cart is empty"

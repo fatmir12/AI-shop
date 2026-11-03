@@ -13,7 +13,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Map;
+
 
 @Configuration
 public class McpTransportConfig {
@@ -51,9 +51,11 @@ public class McpTransportConfig {
                         );
 
                         // U MCP context stavljamo samo userId
-                        return McpTransportContext.create(
-                                Map.of("userId", userId)
-                        );
+                        var context = new java.util.HashMap<String, Object>();
+                        context.put("userId", userId);
+                        String requestId = request.headers().firstHeader("X-AI-Request-ID");
+                        if (requestId != null) context.put("chatRequestId", java.util.UUID.fromString(requestId).toString());
+                        return McpTransportContext.create(context);
 
                     } catch (Exception ex) {
                         throw new ResponseStatusException(

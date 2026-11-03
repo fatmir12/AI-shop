@@ -43,7 +43,8 @@ public class PendingCartActionService {
             Long productId,
             Long itemId,
             Integer quantity,
-            Instant expiresAt
+            Instant expiresAt,
+            String requestId
     ) {
     }
 
@@ -62,6 +63,12 @@ public class PendingCartActionService {
             Long itemId,
             Integer quantity) {
 
+        return create(userId, type, productId, itemId, quantity, null);
+    }
+
+    public PendingAction create(Long userId, ActionType type, Long productId,
+                                Long itemId, Integer quantity, String requestId) {
+        actions.entrySet().removeIf(entry -> !Instant.now().isBefore(entry.getValue().expiresAt()));
         if (userId == null || userId <= 0) {
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
@@ -104,7 +111,8 @@ public class PendingCartActionService {
                 productId,
                 itemId,
                 quantity,
-                Instant.now().plus(10, ChronoUnit.MINUTES)
+                Instant.now().plus(10, ChronoUnit.MINUTES),
+                requestId
         );
 
         // Cuvanje prijedloga u memoriji
@@ -117,6 +125,14 @@ public class PendingCartActionService {
         );
 
         return action;
+    }
+
+    public java.util.List<PendingAction> forRequest(Long userId, String requestId) {
+        return actions.values().stream()
+                .filter(action -> action.userId().equals(userId) && requestId.equals(action.requestId()))
+                .filter(action -> Instant.now().isBefore(action.expiresAt()))
+                .sorted(java.util.Comparator.comparing(PendingAction::expiresAt))
+                .toList();
     }
 
     // 2. Potvrda i izvrsavanje operacije
@@ -194,7 +210,7 @@ public class PendingCartActionService {
         );
 
         return new ConfirmationResult(
-                "Cart action completed successfully",
+                "Promjena korpe je uspješno izvršena.",
                 cart
         );
     }

@@ -118,6 +118,8 @@ public class SecurityConfig {
                                 "/api/orders/*/status"
                         ).hasRole("ADMIN")
 
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+
                         // Svi ostali endpointi zahtijevaju prijavu
                         .anyRequest().authenticated()
                 )

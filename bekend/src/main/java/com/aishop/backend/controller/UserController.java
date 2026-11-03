@@ -21,6 +21,22 @@ public class UserController {
         this.userRepository = userRepository;
     }
 
+    @GetMapping
+    public java.util.List<UserResponse> getUsers() {
+        return userRepository.findAll().stream().map(UserResponse::from).toList();
+    }
+
+    @PutMapping("/me")
+    @org.springframework.transaction.annotation.Transactional
+    public UserResponse updateProfile(@AuthenticationPrincipal Jwt jwt,
+            @jakarta.validation.Valid @RequestBody com.aishop.backend.dto.UpdateProfileRequest request) {
+        UserResponse current = getCurrentUser(jwt);
+        User user = userRepository.findById(current.id()).orElseThrow();
+        user.setFirstName(request.firstName().trim());
+        user.setLastName(request.lastName().trim());
+        return UserResponse.from(userRepository.save(user));
+    }
+
     @GetMapping("/me")
     public UserResponse getCurrentUser(
             @AuthenticationPrincipal Jwt jwt) {

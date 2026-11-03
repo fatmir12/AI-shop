@@ -25,6 +25,7 @@ public class McpClientService {
 
     public <T> T withClient(
             String accessToken,
+            String requestId,
             Function<McpSyncClient, T> operation) {
 
         // Streamable HTTP konekcija na nas MCP Server
@@ -37,6 +38,7 @@ public class McpClientService {
                                         "Authorization",
                                         "Bearer " + accessToken
                                 )
+                                .header("X-AI-Request-ID", requestId)
                 )
                 .build();
 

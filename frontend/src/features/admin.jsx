@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Package, ShoppingBag, Users, TrendingUp, Plus, Pencil, Trash2, Search, ArrowUpRight } from 'lucide-react';
-import { service, isMock } from '../services';
+import { service } from '../services';
 import { useApp } from '../app/context';
 import { useProducts, useCategories } from './products';
 import { Empty, ErrorState, Field, Image, Loading, Modal, Status } from '../components/ui';
@@ -44,7 +44,7 @@ export function Dashboard() {
     Icon: Users
   }, {
     label: t("Order value"),
-    value: money(revenue),
+    value: orders.data ? money(revenue) : '—',
     Icon: TrendingUp
   }];
   return <><Heading title={t("A good day to grow.")} text={t("Here\u2019s what\u2019s happening in your store.")} /><div className="stats-grid">{stats.map(({
@@ -157,5 +157,5 @@ export function AdminUsers() {
   const query = useUsers();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
-  return <><Heading title={t("Customers")} text={t("The people behind every good find.")} /><div className="notice">{isMock ? t("Development directory. Roles are read-only; the backend has no user-management endpoint.") : t("The current backend supports only GET /users/me. An admin user directory requires a new endpoint.")}</div><div className="panel"><div className="table-toolbar"><label className="search-input"><Search size={18} /><input aria-label={t("Search customers")} value={search} onChange={e => setSearch(e.target.value)} placeholder={t("Search name or email\u2026")} /></label></div>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : <div className="table-scroll"><table><thead><tr><th>{t("Name")}</th><th>{t("Email")}</th><th>{t("Role")}</th><th>{t("Details")}</th></tr></thead><tbody>{query.data.filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase())).map(u => <tr key={u.id}><td><strong>{u.firstName} {u.lastName}</strong></td><td>{u.email}</td><td><span className="badge">{statusLabel(u.role)}</span></td><td><button className="text-btn" onClick={() => setSelected(u)}>{t("View \u2192")}</button></td></tr>)}</tbody></table>{!query.data.some(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase())) && <Empty />}</div>}</div>{selected && <Modal title={t("Customer details")} close={() => setSelected(null)}><span className="avatar large">{selected.firstName[0]}</span><h2>{selected.firstName} {selected.lastName}</h2><p>{selected.email}</p><p>{t("Customer ID:")}{selected.id}</p><span className="badge">{statusLabel(selected.role)}</span><p className="muted">{t("Role changes require a future backend administration contract.")}</p></Modal>}</>;
+  return <><Heading title={t("Customers")} text={t("The people behind every good find.")} /><div className="notice">{t('Korisnički podaci su dostupni samo administratoru. Uloge su samo za pregled.')}</div><div className="panel"><div className="table-toolbar"><label className="search-input"><Search size={18} /><input aria-label={t("Search customers")} value={search} onChange={e => setSearch(e.target.value)} placeholder={t("Search name or email\u2026")} /></label></div>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : <div className="table-scroll"><table><thead><tr><th>{t("Name")}</th><th>{t("Email")}</th><th>{t("Role")}</th><th>{t("Details")}</th></tr></thead><tbody>{query.data.filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase())).map(u => <tr key={u.id}><td><strong>{u.firstName} {u.lastName}</strong></td><td>{u.email}</td><td><span className="badge">{statusLabel(u.role)}</span></td><td><button className="text-btn" onClick={() => setSelected(u)}>{t("View \u2192")}</button></td></tr>)}</tbody></table>{!query.data.some(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase())) && <Empty />}</div>}</div>{selected && <Modal title={t("Customer details")} close={() => setSelected(null)}><span className="avatar large">{selected.firstName[0]}</span><h2>{selected.firstName} {selected.lastName}</h2><p>{selected.email}</p><p>{t("Customer ID:")}{selected.id}</p><span className="badge">{statusLabel(selected.role)}</span><p className="muted">{t("Role changes require a future backend administration contract.")}</p></Modal>}</>;
 }

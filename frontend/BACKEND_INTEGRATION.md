@@ -1,102 +1,117 @@
-# AIShop backend integration
+# AIShop integration contracts
 
-Inspected the Java controllers, records, entities, services, JWT configuration and SecurityConfig in `bekend/src/main/java/com/aishop/backend`. The backend was neither started nor modified. API adapters are implemented from source contracts; live connectivity is unverified because SQL Server is unavailable.
+See [../LOCAL_SETUP.md](../LOCAL_SETUP.md) for the local Linux/IntelliJ runbook and live acceptance checklist. Java controllers/DTOs are authoritative. API mode is the checked-in default; mock mode remains independently selectable with `.env.local`. There is no API-to-mock fallback.
 
-## Modes and architecture
+## Architecture and files
 
-React + JavaScript ES modules and JSX, Vite and Tailwind CSS. Zod schemas in `src/services/contracts.js` validate mutation inputs and real API response shapes. `src/services/index.js` selects the adapter once. Pages use that service and TanStack Query, with auth/cart exposed through React Context. API mode never substitutes mock data.
+- `services/index.js`: selects the adapter once.
+- `services/contracts.js`: Zod validation of requests/responses, including AI proposals and confirmation carts.
+- `services/adapters/api.js`: Axios, memory tokens, single concurrent refresh operation, session-generation guards, localized errors and actual REST calls. `createApiService` allows contract tests with an injected transport.
+- `app/Providers.jsx`: authenticated server cart query and serialized cart mutations, cancellation of stale reads, navbar count updates and auth reset.
+- `features/auth.jsx` / `app/ResumeCartIntent.jsx`: role-based login destinations, preserved assistant request state and exactly-once resumed guest cart intent.
+- `features/assistant.jsx`: existing chat UI, bounded history, actual backend reply and structured action proposals.
+- `features/PendingCartAction.jsx`: explicit confirmation/cancellation, duplicate prevention and unknown-outcome handling.
+- `features/CartActionComposer.jsx`: optional deterministic structured-action entry; natural-language chat still uses MCP tools.
 
-Copy `.env.example` to `.env.local`. Set `VITE_DATA_SOURCE=mock` for the standalone demo or `VITE_DATA_SOURCE=api` for Spring Boot, and restart Vite. `VITE_API_BASE_URL=/api` is the default. The existing Vite proxy preserves `/api` and forwards requests to `http://localhost:8081`. Production hosting must provide an equivalent reverse proxy and an SPA fallback to index.html. Vite’s proxy is development-only. Invalid data-source values fail explicitly.
+## Endpoint map (all prefixed /api)
 
-## Existing endpoint map
-
-All paths below include `/api`. IDs are numeric. JSON prices are numbers (Java BigDecimal), not formatted currency strings. No server-side search, filters, sorting or pagination parameters exist; the current UI applies them to the complete product list.
-
-| Method | Endpoint | Request | Response / access |
+| Method | Path | Request | Response / authorization |
 | --- | --- | --- | --- |
 | GET | `/health` | none | `{status,message}`, public |
-| POST | `/auth/register` | `{firstName,lastName,email,password}` | AuthResponse, 201, public |
+| POST | `/auth/register` | `{firstName,lastName,email,password}` | AuthResponse, public |
 | POST | `/auth/login` | `{email,password}` | AuthResponse, public |
-| POST | `/auth/refresh` | `{refreshToken}` | AuthResponse with rotated refresh token, public |
-| POST | `/auth/logout` | `{refreshToken}` | 204; revokes refresh token, public |
-| GET | `/users/me` | bearer token | UserResponse, authenticated |
-| GET | `/products` | none | ProductResponse[], public |
-| GET | `/products/{id}` | none | ProductResponse, public |
-| POST | `/products` | ProductRequest | ProductResponse, 201, ADMIN |
+| POST | `/auth/refresh` | `{refreshToken}` | rotated AuthResponse, public |
+| POST | `/auth/logout` | `{refreshToken}` | 204, public |
+| GET | `/users/me` | bearer | UserResponse, authenticated |
+| PUT | `/users/me` | `{firstName,lastName}` | UserResponse, authenticated ownership from JWT subject; added for this integration |
+| GET | `/users` | bearer | UserResponse[], ADMIN only; added for this integration |
+| GET | `/products`, `/products/{id}` | none | ProductResponse[] / ProductResponse, public |
+| POST | `/products` | ProductRequest | ProductResponse, ADMIN |
 | PUT | `/products/{id}` | ProductRequest | ProductResponse, ADMIN |
-| DELETE | `/products/{id}` | none | 204, ADMIN |
-| GET | `/categories` | none | Category[], public |
-| GET | `/categories/{id}` | none | Category, public |
-| POST | `/categories` | `{name,description}` | Category, 201, ADMIN |
-| PUT | `/categories/{id}` | `{name,description}` | Category, ADMIN |
-| DELETE | `/categories/{id}` | none | 204, ADMIN |
-| GET | `/cart` | bearer token | ShoppingCartResponse, authenticated |
+| DELETE | `/products/{id}` | none | 204, ADMIN; SQL relationships may prevent deletion |
+| GET | `/categories`, `/categories/{id}` | none | Category[] / Category, public |
+| POST, PUT, DELETE | `/categories`, `/categories/{id}` | CategoryRequest for writes | Existing ADMIN endpoints; UI taxonomy remains read-only |
+| GET | `/cart` | none | ShoppingCartResponse, authenticated |
 | POST | `/cart/items` | `{productId,quantity}` | ShoppingCartResponse, authenticated |
 | PUT | `/cart/items/{itemId}` | `{quantity}` | ShoppingCartResponse, authenticated |
 | DELETE | `/cart/items/{itemId}` | none | ShoppingCartResponse, authenticated |
-| DELETE | `/cart` | none | ShoppingCartResponse, authenticated |
-| POST | `/orders` | no request body; consumes authenticated cart | OrderResponse, 201, authenticated |
-| GET | `/orders/my` | none | OrderResponse[], authenticated |
-| GET | `/orders/my/{orderId}` | none | Own OrderResponse, authenticated |
+| DELETE | `/cart` | none | ShoppingCartResponse, authenticated; endpoint available, no separate clear-all UI |
+| POST | `/orders` | **no body** | OrderResponse, authenticated; actual SQL order from cart |
+| GET | `/orders/my`, `/orders/my/{orderId}` | none | Own OrderResponse[] / OrderResponse |
 | GET | `/orders` | none | OrderResponse[], ADMIN |
 | PUT | `/orders/{orderId}/status` | `{status}` | OrderResponse, ADMIN |
+| POST | `/ai/chat` | AiChatRequest below | AiChatResponse, authenticated |
+| POST | `/ai/cart-actions/{actionId}/confirm` | no body | `{message,cart}`, authenticated owner |
 
-Product details and own-order details currently derive from their corresponding list endpoints. The backend also has dedicated detail endpoints as listed. Dashboard statistics derive from loaded products and orders; no analytics endpoint exists.
+Products and own-order details currently use their list results in the UI. No server REST pagination/search contract is assumed; catalog filters/sort apply to actual loaded products. Statistics derive from products/orders/users; unavailable values are not fabricated as revenue.
 
-## Exact DTO fields
+## Data shapes
+
+- AuthResponse: `{accessToken,refreshToken,tokenType:"Bearer",expiresIn,userId,email,role}`; use the returned expiry, not a fixed frontend lifetime.
+- UserResponse: `{id,firstName,lastName,email,role}`. No password hashes or refresh tokens in user endpoints.
+- ProductRequest: `{categoryId,name,description,price,stock,imageUrl}`.
+- ProductResponse: ProductRequest fields plus `{id,categoryName}`.
+- Category: `{id,name,description}`. The frontend mapper adds a slug; no slug field is sent to Java.
+- ShoppingCartResponse: `{cartId,items,totalPrice,totalItems}`.
+- CartItemResponse: `{id,productId,productName,unitPrice,quantity,subtotal}`; updates/deletion use **id**, never productId.
+- OrderResponse: `{id,userId,status,totalAmount,createdAt,items}`; order items carry the same item field shape. Shipping is absent in API mode.
+
+Prices are JSON numbers representing Java BigDecimal. UI formatting uses bs-BA and KM. Order transitions remain PENDING → CONFIRMED/CANCELLED; CONFIRMED → SHIPPED/CANCELLED; SHIPPED → DELIVERED; terminal statuses cannot change. Cancellation restores stock.
+
+## Categories and SQL setup
+
+Exactly Laptopi, Telefoni, Slušalice, Tastature and Miševi are required. `services/categories.js` defines mock seed records and maps known names to stable navigation slugs. Actual API IDs always come from the database and are used for filtering, highlighting, product forms and relationships. Mock IDs 1–5 are not database assumptions.
+
+New Flyway V7 inserts missing names without changing existing IDs/descriptions and stops on conflicting taxonomy without deleting data. See the runbook's conflict plan. Optional `bekend/dev/seed-products.sql` populates only a completely empty products table, joining actual category IDs. Existing backend ADMIN category mutation endpoints remain available but the UI offers no arbitrary taxonomy changes. Any intentional future taxonomy change requires coordination, not a frontend hardcoded ID update.
+
+## AI / MCP contract
+
+Ordinary request:
+
+```json
+{"message":"Koje laptope imate na stanju?","cartAction":null,"history":[]}
+```
+
+`message` max 2000 characters. Optional history has at most 12 `{role:"user"|"assistant",content}` turns, each max 6000 characters. These are conversation data; server system instructions remain authoritative. Omitting history still works.
+
+Structured request:
+
+```json
+{"message":"Pripremi promjenu korpe","cartAction":{"type":"ADD","productId":41,"itemId":null,"quantity":1}}
+```
+
+REMOVE needs itemId; UPDATE needs itemId and the new total quantity. These are the pre-existing backend action types.
+
+Response:
 
 ```json
 {
-  "AuthResponse": {"accessToken":"string","refreshToken":"string","tokenType":"Bearer","expiresIn":3600,"userId":1,"email":"email","role":"USER"},
-  "UserResponse": {"id":1,"firstName":"Alex","lastName":"Morgan","email":"email","role":"USER"},
-  "ProductRequest": {"categoryId":1,"name":"Name","description":"Description","price":199.99,"stock":10,"imageUrl":"https://example.com/image.jpg"},
-  "ProductResponse": {"id":1,"categoryId":1,"categoryName":"Audio","name":"Name","description":"Description","price":199.99,"stock":10,"imageUrl":"https://example.com/image.jpg"},
-  "Category": {"id":1,"name":"Audio","description":"Description"},
-  "CartItemResponse": {"id":1,"productId":1,"productName":"Name","unitPrice":199.99,"quantity":2,"subtotal":399.98},
-  "ShoppingCartResponse": {"cartId":1,"items":[],"totalPrice":0,"totalItems":0},
-  "OrderResponse": {"id":1,"userId":1,"status":"PENDING","totalAmount":399.98,"createdAt":"2026-11-03T12:00:00","items":[]},
-  "OrderItemResponse": {"id":1,"productId":1,"productName":"Name","quantity":2,"unitPrice":199.99,"subtotal":399.98}
+  "reply":"Korpa još nije promijenjena. Potrebna je potvrda.",
+  "pendingAction":{"actionId":"uuid","type":"ADD","productId":41,"itemId":null,"quantity":1,"expiresAt":"2026-11-03T12:10:00Z","status":"PENDING_CONFIRMATION"},
+  "pendingActions":[]
 }
 ```
 
-`expiresIn` above is illustrative; the backend supplies the configured lifetime. Backend roles are exactly `USER` and `ADMIN`. Order statuses are `PENDING`, `CONFIRMED`, `SHIPPED`, `DELIVERED`, `CANCELLED`. Allowed transitions: PENDING → CONFIRMED/CANCELLED, CONFIRMED → SHIPPED/CANCELLED, SHIPPED → DELIVERED; terminal statuses cannot change. Cancellation restores stock. Mock services implement these same rules.
+`pendingAction` is nullable; `pendingActions` now exposes all proposals from that chat. For a real proposal list it contains the same first proposal plus any others. The adapter deduplicates by actionId and supports the singular field. It maps reply → UI content without inventing product recommendations.
 
-Product names max 150, descriptions max 1000, image URLs max 500. Prices > 0, at most 10 integer digits and 2 fractional digits. Stock nonnegative integer. Category names max 100 and descriptions max 500. Registration names max 100, email max 255, password 8–72 characters and at most 72 UTF-8 bytes. The mock checkout decrements stock, snapshots current prices and empties the cart. No real payment integration exists.
+The existing ChatClient → SyncMcpToolCallbackProvider → McpClientService → authenticated Streamable HTTP `/mcp` pipeline remains. Tools: searchProducts, getProductDetails, getCategories, getMyCart, getMyOrders, addToCart, removeFromCart, updateCartQuantity. Mutation tools prepare proposals only. A per-chat UUID is forwarded on the internal MCP connection and stored with prepared actions; the response selects actions by both user and request ID. No action IDs are extracted from model prose and no browser call reaches Ollama.
 
-## Authentication and security
+**Potvrdi** POSTs the actual actionId. The returned cart updates context/query/navbar. Confirmation atomically consumes an owner-bound, unexpired proposal before the transactional cart mutation; repeated calls cannot replay it. A stock failure also consumes the proposal, requiring a new proposal. UI prevents repeated confirmation and treats network ambiguity conservatively. **Odustani** is local dismissal, not a server-side revoke. Proposals expire after ten minutes and are not durable across restarts.
 
-The backend is stateless, using HS256 JWT bearer access tokens. JWT subject is the numeric user ID; `role` supplies USER/ADMIN authorities. Include `Authorization: Bearer <accessToken>` on authenticated requests. These are not cookie sessions. Registration always creates USER accounts. Refresh tokens rotate and reuse revokes their family; never retry a refresh blindly.
+## Auth, transport and synchronization
 
-Axios keeps both tokens in memory and refreshes once per concurrent group before access-token expiration. Login/register then fetch `/users/me`. Reloading API mode requires signing in again; no real tokens or passwords are stored in localStorage. A 401 clears frontend auth; logout clears local tokens even when revocation fails. A backend-side logout revokes refresh tokens but an already issued access token remains valid until expiration. Coordinate persistent sessions with the backend (prefer an agreed HttpOnly cookie design rather than putting tokens in browser storage). No real demo accounts are assumed to exist in the database.
+Bearer JWT and rotating refresh tokens stay in memory. Page reload requires login. Refresh is shared across concurrent requests and cannot restore tokens after logout or a newer login. Unauthorized requests expire the current session; writes are never automatically replayed. No passwords/tokens are persisted in localStorage. Chat history is namespaced by data source and user ID, keeping mock/API identities separate.
 
-Spring Security disables CSRF and has no explicit CORS configuration. The development same-origin proxy avoids browser CORS. For separate production origins, the backend developer must explicitly configure approved origins, methods, Authorization/Content-Type headers and OPTIONS preflight. If auth changes to cookies, revisit credentials, SameSite/Secure attributes, CORS and CSRF protection together. Frontend route checks are only UX; backend authorization remains essential.
+API guests must sign in for cart/AI. Router state preserves assistant questions and intended product additions through login/register. Ref guards prevent StrictMode duplicate submissions. AI timeout is 180 seconds per chat request; ordinary requests retain 15 seconds. Query retries apply only to reads; mutations have no automatic retry. Cart mutations cancel stale cart reads, serialize writes, and update actual returned totals.
 
-## Missing contracts and blockers
+Vite `/api` proxy targets localhost:8081; MCP_BASE_URL defaults to http://localhost:8081 for backend self-calls. Existing stateless Spring Security and disabled CSRF remain. Same-origin local proxy avoids CORS; a future cross-origin deployment needs explicit backend CORS. No production session redesign is included.
 
-- **AI:** no controller, service or AI DTO is present in this checkout. Ollama may be part of the planned backend, but there is no callable AI endpoint here. Agree on a Spring Boot chat request/response, history/session limits, product recommendation IDs, timeouts and error/streaming format. The browser never calls Ollama and does not specify a model.
-- **Shipping:** existing POST `/orders` accepts no shipping or customer-information body. The API adapter exposes `createOrderFromCart()` for that exact contract, but full checkout is blocked in API mode to avoid silently discarding the entered address. Agree on shipping fields and persistence, then implement `checkout(shipping)` using the agreed endpoint. No endpoint has been invented.
-- **Profile editing:** only GET `/users/me` exists. Agree on an update endpoint, mutable fields and validation. Mock profile editing persists locally.
-- **Admin users and counts:** there is no list/detail/update endpoint. The directory and customer metric work in mock mode; API directory reports unsupported and dashboard displays unavailable. Roles are read-only in both modes.
-- **Password recovery:** no forgot/reset endpoint exists. The UI explains that recovery is unavailable; it never claims to send email.
-- **Images:** backend stores one image URL. Gallery uses crops of that image; multiple-image storage needs an agreed extension. Demo photos are illustrative Unsplash photos, not guaranteed exact SKU photographs. Local SVG fallbacks work if remote images fail.
-- **Deletion and errors:** foreign-key-backed products/categories may reject deletion. Agree on a structured error response and any archive workflow; current Axios handles messages/status/network errors without fake success. Mock guards products linked to orders and nonempty categories.
-- **Guest cart:** mock supports a guest bag and merges it on sign-in; the existing API cart requires authentication. No guest-to-server cart transfer is implemented in API mode.
-- **Production quality gates:** live API integration, backend auth tests, persistent-session design, order ownership checks, deployment routing and browser/accessibility regression checks remain coordination tasks.
+## Checkout decision and genuine limits
 
-## Verification and development storage
+API checkout uses POST /orders with no shipping body. The page explicitly omits address fields, shows the authenticated customer, and explains that it creates a real database order without delivery or payment handling. Mock mode retains shipping simulation. No schema change for shipping is needed. The real ID/total/status are shown, queries refresh, and uncertain submission results direct the user to history instead of encouraging duplicate submits. Backend checkout locks the cart when consuming it.
 
-Run `npm install`, `npm run lint`, `npm test`, `npm run build`, and `npm run dev` from `frontend/`. Mock data lives at `aishop.mock.v1`, session user ID at `aishop.session`, and assistant messages at `aishop.chat.<userId>` in localStorage. These are development simulations, not a security boundary. New mock user passwords live only in memory; after reload, the safe ID-only session remains until logout, but logging back into a newly registered account requires a new development session. Demo credentials remain usable. To reset the demo, clear only the `aishop.*` localStorage keys. Never enter real customer data into this local demo.
+Remaining genuine gaps: password-reset email, shipping/payment persistence, role editing, durable pending-action storage, multiple product-image storage. No unsupported feature silently returns mock success.
 
-## Bosnian storefront and fixed taxonomy
+## Validation
 
-The UI uses Bosnian Latin text through `src/i18n/bs.js`, with bs-BA date/currency formatting. Stored enum values and API field names remain unchanged; order statuses and roles have localized labels.
-
-The catalog taxonomy is exactly Laptopi, Telefoni, Slušalice, Tastature, Miševi. `src/services/categories.js` owns the five initial records, their mock IDs (1–5) and frontend slugs. Mock category mutation methods reject creation, renaming and deletion, and the admin category screen is read-only. Product CRUD remains available.
-
-The existing Java Category entity has `{id,name,description}` and no slug. `mapCategory()` adds frontend navigation metadata without changing the backend ID. All product relationships, filters, links and forms use `categoryId`/`category.id`; database IDs need not match mock IDs. API categories continue to come from GET /api/categories. The backend developer must seed the five agreed names and enforce the fixed taxonomy server-side; existing backend category CRUD currently permits arbitrary categories. Do not seed guessed IDs. No new endpoint is assumed.
-
-Existing local mock storage receives taxonomy version 2 on first access: known seeded product IDs are adapted to the new electronics catalog, retaining modified prices and stocks. Users, sessions, orders and carts are retained. Historical order snapshots remain unchanged. Custom products are retained; administrators should verify their category assignments after migration. New data uses the five-category seed directly.
-
-`AIAssistantBar.jsx` appears once below the storefront navigation and outside the admin layout. It sends a UUID-tagged request through React Router state. The existing assistant consumes that request once (including React StrictMode effect replay), clears the navigation state, and invokes the same chat service used for manual messages. Busy conversations retain pending navigation requests until ready. Existing per-user chat history stays intact. Mock guests may use the assistant. API mode reports the missing AI endpoint explicitly and never calls Ollama directly.
-
-Visual layout follows the supplied reference's white header, blue bar, spacious product imagery, pale-gray product details and rounded blue buttons. Reference logos, promotional offers, installment plans and third-party screenshots are not reused as assets. Product photos remain illustrative with local fallbacks. Browser-based pixel comparison remains to be performed when browser tooling is available.
+Frontend lint, contract/business-logic tests and API-mode build pass. Backend Java 25 compilation/package and six focused security/pending-action tests pass. Full context tests were attempted and fail because SQL Server is unavailable locally. Real DB migrations, seed, Ollama/MCP HTTP round trips, SQL locking and visual browser checks await the teammate's environment. See LOCAL_SETUP.md for the unchecked live acceptance list.

@@ -3,6 +3,12 @@ package com.aishop.backend.service;
 
 import com.aishop.backend.dto.AiChatResponse;
 import com.aishop.backend.dto.CartActionRequest;
+import com.aishop.backend.dto.AiChatRequest;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import java.util.List;
+import java.util.UUID;
 import com.aishop.backend.service.PendingCartActionService.PendingAction;
 
 import org.springframework.ai.chat.client.ChatClient;
@@ -129,7 +135,7 @@ public class AiChatService {
                       putem korisnickog interfejsa.
                     - Nakon pripreme prikazi naziv radnje,
                       proizvod, kolicinu kada je primjenjivo,
-                      te tacan actionId iz rezultata alata.
+                      bez ispisivanja internog actionId-a; interfejs ce prikazati potvrdu.
                     - Jasno reci:
                       "Korpa jos nije promijenjena.
                        Potrebna je potvrda radnje."
@@ -164,12 +170,16 @@ public class AiChatService {
     }
 
     // 1. Obicni AI razgovor preko Ollame i MCP alata
-    public String chat(
-            String message,
-            String accessToken) {
-
-        return mcpClientService.withClient(
-                accessToken,
+    public AiChatResponse chat(String message, String accessToken, Long userId,
+                               List<AiChatRequest.ChatTurn> history) {
+        String requestId = UUID.randomUUID().toString();
+        List<Message> conversation = new java.util.ArrayList<>();
+        if (history != null) for (var turn : history) {
+            conversation.add("user".equals(turn.role()) ? new UserMessage(turn.content()) : new AssistantMessage(turn.content()));
+        }
+        conversation.add(new UserMessage(message));
+        String reply = mcpClientService.withClient(
+                accessToken, requestId,
                 mcpClient -> {
 
                     var mcpTools =
@@ -179,7 +189,7 @@ public class AiChatService {
                                     .build();
 
                     String response = chatClient.prompt()
-                            .user(message)
+                            .messages(conversation)
                             .tools(mcpTools)
                             .call()
                             .content();
@@ -189,6 +199,11 @@ public class AiChatService {
                             : "Trenutno ne mogu generisati odgovor.";
                 }
         );
+        var proposals = pendingCartActionService.forRequest(userId, requestId).stream()
+                .map(action -> new AiChatResponse.PendingActionResponse(action.actionId(), action.type().name(),
+                        action.productId(), action.itemId(), action.quantity(), action.expiresAt().toString(), "PENDING_CONFIRMATION"))
+                .toList();
+        return new AiChatResponse(reply, proposals.isEmpty() ? null : proposals.getFirst(), proposals);
     }
 
     // 2. Priprema strukturirane operacije nad korpom
