@@ -1,3 +1,5 @@
+import { statusLabel } from '../i18n/bs.js';
+import { t } from "../i18n/bs.js";
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -21,7 +23,7 @@ function Heading({
   text,
   children
 }) {
-  return <div className="admin-page-heading"><div><span className="eyebrow">AISHOP ADMINISTRATION</span><h1>{title}</h1><p>{text}</p></div>{children}</div>;
+  return <div className="admin-page-heading"><div><span className="eyebrow">{t("AISHOP ADMINISTRATION")}</span><h1>{title}</h1><p>{text}</p></div>{children}</div>;
 }
 export function Dashboard() {
   const products = useProducts();
@@ -29,29 +31,29 @@ export function Dashboard() {
   const users = useUsers();
   const revenue = orders.data?.filter(o => o.status !== 'CANCELLED').reduce((sum, o) => sum + o.totalAmount, 0) ?? 0;
   const stats = [{
-    label: 'Total products',
+    label: t("Total products"),
     value: products.data?.length ?? '—',
     Icon: Package
   }, {
-    label: 'Total orders',
+    label: t("Total orders"),
     value: orders.data?.length ?? '—',
     Icon: ShoppingBag
   }, {
-    label: 'Customers',
-    value: users.data?.length ?? 'Unavailable',
+    label: t("Customers"),
+    value: users.data?.length ?? t("Unavailable"),
     Icon: Users
   }, {
-    label: 'Order value',
+    label: t("Order value"),
     value: money(revenue),
     Icon: TrendingUp
   }];
-  return <><Heading title="A good day to grow." text="Here’s what’s happening in your store." /><div className="stats-grid">{stats.map(({
+  return <><Heading title={t("A good day to grow.")} text={t("Here\u2019s what\u2019s happening in your store.")} /><div className="stats-grid">{stats.map(({
         label,
         value,
         Icon
-      }) => <div className="stat" key={label}><span><Icon size={21} /></span><small>{label}</small><strong>{value}</strong><p>{label === 'Order value' ? 'All non-cancelled orders' : 'Current store total'}</p></div>)}</div><div className="admin-two-col"><section className="panel"><div className="section-title"><h2>Recent orders</h2><Link to="/admin/orders">View all <ArrowUpRight size={15} /></Link></div>{orders.isPending ? <Loading /> : orders.isError ? <ErrorState error={orders.error} /> : <OrderTable orders={orders.data.slice(0, 5)} />}</section><section className="panel"><div className="section-title"><h2>Stock watch</h2><span className="badge">5 or fewer</span></div>{products.isError ? <ErrorState error={products.error} /> : products.data?.filter(p => p.stock <= 5).map(p => <Link className="stock-row" to="/admin/products" key={p.id}><Image src={p.imageUrl} alt={p.name} /><span><strong>{p.name}</strong><small>{p.categoryName}</small></span><span className="status status-pending">{p.stock} left</span></Link>)}{products.data && !products.data.some(p => p.stock <= 5) && <Empty title="Stock looks healthy" text="No low-stock products." />}</section></div><section className="panel"><h2>Order pipeline</h2><p className="muted">Current order distribution, based on store data.</p><div className="pipeline">{['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(status => {
+      }) => <div className="stat" key={label}><span><Icon size={21} /></span><small>{label}</small><strong>{value}</strong><p>{label === t("Order value") ? t("All non-cancelled orders") : t("Current store total")}</p></div>)}</div><div className="admin-two-col"><section className="panel"><div className="section-title"><h2>{t("Recent orders")}</h2><Link to="/admin/orders">{t("View all")}<ArrowUpRight size={15} /></Link></div>{orders.isPending ? <Loading /> : orders.isError ? <ErrorState error={orders.error} /> : <OrderTable orders={orders.data.slice(0, 5)} />}</section><section className="panel"><div className="section-title"><h2>{t("Stock watch")}</h2><span className="badge">{t("5 or fewer")}</span></div>{products.isError ? <ErrorState error={products.error} /> : products.data?.filter(p => p.stock <= 5).map(p => <Link className="stock-row" to="/admin/products" key={p.id}><Image src={p.imageUrl} alt={p.name} /><span><strong>{p.name}</strong><small>{p.categoryName}</small></span><span className="status status-pending">{p.stock}{t("left")}</span></Link>)}{products.data && !products.data.some(p => p.stock <= 5) && <Empty title={t("Stock looks healthy")} text={t("No low-stock products.")} />}</section></div><section className="panel"><h2>{t("Order pipeline")}</h2><p className="muted">{t("Current order distribution, based on store data.")}</p><div className="pipeline">{['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(status => {
           const count = orders.data?.filter(o => o.status === status).length ?? 0;
-          return <div key={status}><div><Status status={status} /><strong>{count}</strong></div><progress aria-label={`${status} orders`} value={count} max={orders.data?.length || 1} /></div>;
+          return <div key={status}><div><Status status={status} /><strong>{count}</strong></div><progress aria-label={`${statusLabel(status)} narudžbi`} value={count} max={orders.data?.length || 1} /></div>;
         })}</div></section></>;
 }
 export function AdminProducts() {
@@ -72,7 +74,7 @@ export function AdminProducts() {
       id
     }) => {
       const name = String(form.get('name')).trim();
-      if (!name) throw new Error('Product name is required.');
+      if (!name) throw new Error(t("Product name is required."));
       return service.saveProduct({
         name,
         description: String(form.get('description')),
@@ -85,7 +87,7 @@ export function AdminProducts() {
     onSuccess: async () => {
       await cache.invalidateQueries();
       setEdit(null);
-      notify('Product saved');
+      notify(t("Product saved"));
     },
     onError: e => notify(errorMessage(e), true)
   });
@@ -94,77 +96,36 @@ export function AdminProducts() {
     onSuccess: async () => {
       await cache.invalidateQueries();
       setDeleting(null);
-      notify('Product deleted');
+      notify(t("Product deleted"));
     },
     onError: e => notify(errorMessage(e), true)
   });
   const p = edit && edit !== 'new' ? edit : null;
   const filtered = query.data?.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) && (!category || p.categoryId === Number(category)));
-  return <><Heading title="Products" text="A thoughtful collection starts here."><button className="btn" onClick={() => {
+  return <><Heading title={t("Products")} text={t("A thoughtful collection starts here.")}><button className="btn" onClick={() => {
         setEdit('new');
         setImage('');
-      }}><Plus size={17} /> Add product</button></Heading><div className="panel"><div className="table-toolbar"><label className="search-input"><Search size={18} /><input aria-label="Search products" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products…" /></label><select aria-label="Filter by category" value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{categories.data?.map(c => <option value={c.id} key={c.id}>{c.name}</option>)}</select></div>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : !filtered?.length ? <Empty /> : <div className="table-scroll"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>{filtered.map(p => <tr key={p.id}><td><div className="table-product"><Image src={p.imageUrl} alt={p.name} /><strong>{p.name}</strong></div></td><td>{p.categoryName}</td><td>{money(p.price)}</td><td><span className={`status ${p.stock <= 5 ? 'status-pending' : 'status-delivered'}`}>{p.stock} in stock</span></td><td><div className="actions"><button className="icon-btn" aria-label={`Edit ${p.name}`} onClick={() => {
+      }}><Plus size={17} />{t("Add product")}</button></Heading><div className="panel"><div className="table-toolbar"><label className="search-input"><Search size={18} /><input aria-label={t("Search products")} value={search} onChange={e => setSearch(e.target.value)} placeholder={t("Search products\u2026")} /></label><select aria-label={t("Filter by category")} value={category} onChange={e => setCategory(e.target.value)}><option value="">{t("All categories")}</option>{categories.data?.map(c => <option value={c.id} key={c.id}>{c.name}</option>)}</select></div>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : !filtered?.length ? <Empty /> : <div className="table-scroll"><table><thead><tr><th>{t("Product")}</th><th>{t("Category")}</th><th>{t("Price")}</th><th>{t("Stock")}</th><th>{t("Actions")}</th></tr></thead><tbody>{filtered.map(p => <tr key={p.id}><td><div className="table-product"><Image src={p.imageUrl} alt={p.name} /><strong>{p.name}</strong></div></td><td>{p.categoryName}</td><td>{money(p.price)}</td><td><span className={`status ${p.stock <= 5 ? 'status-pending' : 'status-delivered'}`}>{p.stock} {t("in stock")}</span></td><td><div className="actions"><button className="icon-btn" aria-label={`Uredi: ${p.name}`} onClick={() => {
                     setEdit(p);
                     setImage(p.imageUrl);
-                  }}><Pencil size={16} /></button><button className="icon-btn danger" aria-label={`Delete ${p.name}`} onClick={() => setDeleting(p)}><Trash2 size={16} /></button></div></td></tr>)}</tbody></table></div>}</div>{edit && <Modal title={p ? 'Edit product' : 'Add a thoughtful find'} close={() => !mutation.isPending && setEdit(null)}><form onSubmit={e => {
+                  }}><Pencil size={16} /></button><button className="icon-btn danger" aria-label={`Obriši: ${p.name}`} onClick={() => setDeleting(p)}><Trash2 size={16} /></button></div></td></tr>)}</tbody></table></div>}</div>{edit && <Modal title={p ? t("Edit product") : t("Add a thoughtful find")} close={() => !mutation.isPending && setEdit(null)}><form onSubmit={e => {
         e.preventDefault();
         mutation.mutate({
           form: new FormData(e.currentTarget),
           id: p?.id
         });
-      }}><Field label="Product name" name="name" required maxLength={150} defaultValue={p?.name} /><label className="field"><span>Category</span><select name="categoryId" defaultValue={p?.categoryId ?? ''} required><option value="" disabled>Select a category</option>{categories.data?.map(c => <option value={c.id} key={c.id}>{c.name}</option>)}</select></label><label className="field"><span>Description</span><textarea name="description" maxLength={1000} rows={3} defaultValue={p?.description} /></label><div className="form-row"><Field label="Price (KM)" name="price" type="number" min="0.01" max="9999999999.99" step="0.01" required defaultValue={p?.price} /><Field label="Stock" name="stock" type="number" min="0" max="2147483647" step="1" required defaultValue={p?.stock ?? 0} /></div><Field label="Image URL" name="imageUrl" type="url" maxLength={500} value={image} onChange={e => setImage(e.target.value)} placeholder="https://…" /><Image className="image-preview" src={image} alt="Product image preview" /><button className="btn full" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : 'Save product'}</button></form></Modal>}{deleting && <Modal title="Delete this product?" close={() => !del.isPending && setDeleting(null)}><p>“{deleting.name}” will be removed from the catalog. Products linked to orders cannot be deleted.</p><div className="modal-actions"><button className="btn secondary" onClick={() => setDeleting(null)}>Keep product</button><button className="btn destructive" disabled={del.isPending} onClick={() => del.mutate(deleting.id)}>Delete product</button></div></Modal>}</>;
+      }}><Field label={t("Product name")} name="name" required maxLength={150} defaultValue={p?.name} /><label className="field"><span>{t("Category")}</span><select name="categoryId" defaultValue={p?.categoryId ?? ''} required><option value="" disabled>{t("Select a category")}</option>{categories.data?.map(c => <option value={c.id} key={c.id}>{c.name}</option>)}</select></label><label className="field"><span>{t("Description")}</span><textarea name="description" maxLength={1000} rows={3} defaultValue={p?.description} /></label><div className="form-row"><Field label={t("Price (KM)")} name="price" type="number" min="0.01" max="9999999999.99" step="0.01" required defaultValue={p?.price} /><Field label={t("Stock")} name="stock" type="number" min="0" max="2147483647" step="1" required defaultValue={p?.stock ?? 0} /></div><Field label={t("Image URL")} name="imageUrl" type="url" maxLength={500} value={image} onChange={e => setImage(e.target.value)} placeholder="https://…" /><Image className="image-preview" src={image} alt={t("Product image preview")} /><button className="btn full" disabled={mutation.isPending}>{mutation.isPending ? t("Saving\u2026") : t("Save product")}</button></form></Modal>}{deleting && <Modal title={t("Delete this product?")} close={() => !del.isPending && setDeleting(null)}><p>“{deleting.name}{t("\u201D will be removed from the catalog. Products linked to orders cannot be deleted.")}</p><div className="modal-actions"><button className="btn secondary" onClick={() => setDeleting(null)}>{t("Keep product")}</button><button className="btn destructive" disabled={del.isPending} onClick={() => del.mutate(deleting.id)}>{t("Delete product")}</button></div></Modal>}</>;
 }
 export function AdminCategories() {
   const query = useCategories();
   const products = useProducts();
-  const [edit, setEdit] = useState(null);
-  const [deleting, setDeleting] = useState(null);
-  const cache = useQueryClient();
-  const {
-    notify
-  } = useApp();
-  const save = useMutation({
-    mutationFn: ({
-      data,
-      id
-    }) => {
-      const name = String(data.get('name')).trim();
-      if (!name) throw new Error('Category name is required.');
-      return service.saveCategory({
-        name,
-        description: String(data.get('description'))
-      }, id);
-    },
-    onSuccess: async () => {
-      await cache.invalidateQueries();
-      setEdit(null);
-      notify('Category saved');
-    },
-    onError: e => notify(errorMessage(e), true)
-  });
-  const del = useMutation({
-    mutationFn: id => service.deleteCategory(id),
-    onSuccess: async () => {
-      await cache.invalidateQueries();
-      setDeleting(null);
-      notify('Category deleted');
-    },
-    onError: e => notify(errorMessage(e), true)
-  });
-  const c = edit && edit !== 'new' ? edit : null;
-  return <><Heading title="Categories" text="Give every good find a place to belong."><button className="btn" onClick={() => setEdit('new')}><Plus size={17} /> Add category</button></Heading>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : !query.data.length ? <Empty /> : <div className="admin-category-grid">{query.data.map(c => <div className="panel" key={c.id}><span className="category-symbol"><Package /></span><h2>{c.name}</h2><p>{c.description}</p><span className="badge">{products.data?.filter(p => p.categoryId === c.id).length ?? 0} products</span><div className="modal-actions"><button className="btn secondary" onClick={() => setEdit(c)}><Pencil size={15} /> Edit</button><button className="icon-btn danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.name}`}><Trash2 size={17} /></button></div></div>)}</div>}{edit && <Modal title={c ? 'Edit category' : 'Add category'} close={() => !save.isPending && setEdit(null)}><form onSubmit={e => {
-        e.preventDefault();
-        save.mutate({
-          data: new FormData(e.currentTarget),
-          id: c?.id
-        });
-      }}><Field label="Category name" name="name" required maxLength={100} defaultValue={c?.name} /><label className="field"><span>Description</span><textarea name="description" maxLength={500} rows={3} defaultValue={c?.description} /></label><button className="btn full" disabled={save.isPending}>Save category</button></form></Modal>}{deleting && <Modal title="Delete category?" close={() => !del.isPending && setDeleting(null)}><p>Remove “{deleting.name}”? Categories must be empty before they can be deleted.</p><div className="modal-actions"><button className="btn secondary" onClick={() => setDeleting(null)}>Keep category</button><button className="btn destructive" disabled={del.isPending} onClick={() => del.mutate(deleting.id)}>Delete category</button></div></Modal>}</>;
+  return <><Heading title={t("Kategorije")} text={t("Pet definiranih kategorija kataloga.")} /><div className="notice">{t("Kategorije su dio definiranog kataloga. Dodavanje, preimenovanje i brisanje nije omogu\u0107eno.")}</div>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : <div className="admin-category-grid">{query.data.map(category => <section className="panel" key={category.id}><h2>{category.name}</h2><p>{category.description}</p><span className="badge">{products.data?.filter(product => product.categoryId === category.id).length ?? 0}{t("proizvoda")}</span></section>)}</div>}</>;
 }
 function OrderTable({
   orders,
   select
 }) {
-  return !orders.length ? <Empty title="No orders yet" text="Orders will appear here after checkout." /> : <div className="table-scroll"><table><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Total</th><th>Details</th></tr></thead><tbody>{orders.map(o => <tr key={o.id}><td><strong>#{o.id}</strong><small>{new Date(o.createdAt).toLocaleDateString()}</small></td><td>Customer #{o.userId}</td><td><Status status={o.status} /></td><td>{money(o.totalAmount)}</td><td>{select ? <button className="text-btn" onClick={() => select(o)}>View →</button> : <Link className="text-btn" to="/admin/orders">View →</Link>}</td></tr>)}</tbody></table></div>;
+  return !orders.length ? <Empty title={t("No orders yet")} text={t("Orders will appear here after checkout.")} /> : <div className="table-scroll"><table><thead><tr><th>{t("Order")}</th><th>{t("Customer")}</th><th>{t("Status")}</th><th>{t("Total")}</th><th>{t("Details")}</th></tr></thead><tbody>{orders.map(o => <tr key={o.id}><td><strong>#{o.id}</strong><small>{new Date(o.createdAt).toLocaleDateString('bs-BA')}</small></td><td>{t("Customer #")}{o.userId}</td><td><Status status={o.status} /></td><td>{money(o.totalAmount)}</td><td>{select ? <button className="text-btn" onClick={() => select(o)}>{t("View \u2192")}</button> : <Link className="text-btn" to="/admin/orders">{t("View \u2192")}</Link>}</td></tr>)}</tbody></table></div>;
 }
 export function AdminOrders() {
   const query = useOrders();
@@ -182,19 +143,19 @@ export function AdminOrders() {
     }) => service.status(id, status),
     onSuccess: async () => {
       await cache.invalidateQueries();
-      notify('Order status updated');
+      notify(t("Order status updated"));
     },
     onError: e => notify(errorMessage(e), true)
   });
   const order = query.data?.find(o => o.id === selected);
-  return <><Heading title="Orders" text="Follow every find, from bag to doorstep." /><div className="panel"><div className="table-toolbar"><input aria-label="Search orders" placeholder="Search order or customer ID…" value={search} onChange={e => setSearch(e.target.value)} /><select value={filter} onChange={e => setFilter(e.target.value)} aria-label="Order status"><option value="">All statuses</option>{Object.keys(transitions).map(s => <option key={s}>{s}</option>)}</select></div>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : <OrderTable orders={query.data.filter(o => (!filter || o.status === filter) && `${o.id} ${o.userId}`.includes(search))} select={o => setSelected(o.id)} />}</div>{order && <Modal title="Order details" close={() => setSelected(null)}><OrderDetails order={order} />{transitions[order.status].length > 0 && <label className="field"><span>Update status</span><select disabled={update.isPending} value="" onChange={e => update.mutate({
+  return <><Heading title={t("Orders")} text={t("Follow every find, from bag to doorstep.")} /><div className="panel"><div className="table-toolbar"><input aria-label={t("Search orders")} placeholder={t("Search order or customer ID\u2026")} value={search} onChange={e => setSearch(e.target.value)} /><select value={filter} onChange={e => setFilter(e.target.value)} aria-label={t("Order status")}><option value="">{t("All statuses")}</option>{Object.keys(transitions).map(s => <option key={s} value={s}>{statusLabel(s)}</option>)}</select></div>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : <OrderTable orders={query.data.filter(o => (!filter || o.status === filter) && `${o.id} ${o.userId}`.includes(search))} select={o => setSelected(o.id)} />}</div>{order && <Modal title={t("Order details")} close={() => setSelected(null)}><OrderDetails order={order} />{transitions[order.status].length > 0 && <label className="field"><span>{t("Update status")}</span><select disabled={update.isPending} value="" onChange={e => update.mutate({
           id: order.id,
           status: e.target.value
-        })}><option value="" disabled>Select next status</option>{transitions[order.status].map(s => <option key={s}>{s}</option>)}</select></label>}</Modal>}</>;
+        })}><option value="" disabled>{t("Select next status")}</option>{transitions[order.status].map(s => <option key={s} value={s}>{statusLabel(s)}</option>)}</select></label>}</Modal>}</>;
 }
 export function AdminUsers() {
   const query = useUsers();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
-  return <><Heading title="Customers" text="The people behind every good find." /><div className="notice">{isMock ? 'Development directory. Roles are read-only; the backend has no user-management endpoint.' : 'The current backend supports only GET /users/me. An admin user directory requires a new endpoint.'}</div><div className="panel"><div className="table-toolbar"><label className="search-input"><Search size={18} /><input aria-label="Search customers" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or email…" /></label></div>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : <div className="table-scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Details</th></tr></thead><tbody>{query.data.filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase())).map(u => <tr key={u.id}><td><strong>{u.firstName} {u.lastName}</strong></td><td>{u.email}</td><td><span className="badge">{u.role}</span></td><td><button className="text-btn" onClick={() => setSelected(u)}>View →</button></td></tr>)}</tbody></table>{!query.data.some(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase())) && <Empty />}</div>}</div>{selected && <Modal title="Customer details" close={() => setSelected(null)}><span className="avatar large">{selected.firstName[0]}</span><h2>{selected.firstName} {selected.lastName}</h2><p>{selected.email}</p><p>Customer ID: {selected.id}</p><span className="badge">{selected.role}</span><p className="muted">Role changes require a future backend administration contract.</p></Modal>}</>;
+  return <><Heading title={t("Customers")} text={t("The people behind every good find.")} /><div className="notice">{isMock ? t("Development directory. Roles are read-only; the backend has no user-management endpoint.") : t("The current backend supports only GET /users/me. An admin user directory requires a new endpoint.")}</div><div className="panel"><div className="table-toolbar"><label className="search-input"><Search size={18} /><input aria-label={t("Search customers")} value={search} onChange={e => setSearch(e.target.value)} placeholder={t("Search name or email\u2026")} /></label></div>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : <div className="table-scroll"><table><thead><tr><th>{t("Name")}</th><th>{t("Email")}</th><th>{t("Role")}</th><th>{t("Details")}</th></tr></thead><tbody>{query.data.filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase())).map(u => <tr key={u.id}><td><strong>{u.firstName} {u.lastName}</strong></td><td>{u.email}</td><td><span className="badge">{statusLabel(u.role)}</span></td><td><button className="text-btn" onClick={() => setSelected(u)}>{t("View \u2192")}</button></td></tr>)}</tbody></table>{!query.data.some(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase())) && <Empty />}</div>}</div>{selected && <Modal title={t("Customer details")} close={() => setSelected(null)}><span className="avatar large">{selected.firstName[0]}</span><h2>{selected.firstName} {selected.lastName}</h2><p>{selected.email}</p><p>{t("Customer ID:")}{selected.id}</p><span className="badge">{statusLabel(selected.role)}</span><p className="muted">{t("Role changes require a future backend administration contract.")}</p></Modal>}</>;
 }

@@ -1,17 +1,18 @@
 import { z } from 'zod';
+z.config({ localeError: () => 'Provjerite unesenu vrijednost.' });
 const id = z.number().int().positive();
-const name = z.string().trim().min(1, 'Please enter a name.').max(100);
+const name = z.string().trim().min(1, 'Unesite naziv.').max(100);
 const text = max => z.string().max(max).nullish().transform(value => value ?? '');
 export const roleSchema = z.enum(['USER', 'ADMIN']);
 export const statusSchema = z.enum(['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED']);
 export const loginSchema = z.object({
   email: z.email().trim().toLowerCase(),
-  password: z.string().min(1, 'Enter your password.')
+  password: z.string().min(1, 'Unesite lozinku.')
 });
 export const registerSchema = loginSchema.extend({
   firstName: name,
   lastName: name,
-  password: z.string().min(8).max(72).refine(value => new TextEncoder().encode(value).length <= 72, 'Password must be at most 72 UTF-8 bytes.')
+  password: z.string().min(8).max(72).refine(value => new TextEncoder().encode(value).length <= 72, 'Lozinka može sadržavati najviše 72 UTF-8 bajta.')
 });
 export const profileSchema = z.object({
   firstName: name,
@@ -33,9 +34,9 @@ export const productRequestSchema = z.object({
   categoryId: id,
   name: z.string().trim().min(1).max(150),
   description: text(1000),
-  price: z.number().positive().max(9999999999.99).refine(value => Math.abs(value * 100 - Math.round(value * 100)) < 0.0001, 'Price must have at most two decimal places.'),
+  price: z.number().positive().max(9999999999.99).refine(value => Math.abs(value * 100 - Math.round(value * 100)) < 0.0001, 'Cijena može imati najviše dvije decimale.'),
   stock: z.number().int().min(0).max(2147483647),
-  imageUrl: z.union([z.literal(''), z.url().refine(value => /^https?:\/\//i.test(value), 'Use an HTTP or HTTPS image URL.')]).nullish().transform(value => value ?? '')
+  imageUrl: z.union([z.literal(''), z.url().refine(value => /^https?:\/\//i.test(value), 'Unesite HTTP ili HTTPS adresu slike.')]).nullish().transform(value => value ?? '')
 });
 export const productSchema = productRequestSchema.extend({
   id,
@@ -46,7 +47,7 @@ export const shippingSchema = profileSchema.extend({
   email: z.email(),
   address: z.string().trim().min(5).max(200),
   city: name,
-  postalCode: z.string().regex(/^\d{5}$/, 'Enter a five-digit postal code.'),
+  postalCode: z.string().regex(/^\d{5}$/, 'Unesite petocifreni poštanski broj.'),
   phone: z.string().trim().min(6).max(30)
 });
 export const cartItemSchema = z.object({
@@ -83,7 +84,7 @@ export const authSchema = z.object({
 });
 export function validate(schema, input) {
   const result = schema.safeParse(input);
-  if (!result.success) throw new Error(result.error.issues.map(issue => `${issue.path.join('.') || 'Value'}: ${issue.message}`).join(' '));
+  if (!result.success) throw new Error(result.error.issues.map(issue => `${'Unos'}: ${issue.message}`).join(' '));
   return result.data;
 }
 export function withValidation(adapter) {

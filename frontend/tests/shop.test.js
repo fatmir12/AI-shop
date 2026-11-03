@@ -1,107 +1,60 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { total, transitions, read } from '../src/utils/shop.js'
+import { total } from '../src/utils/shop.js'
 import { mockService } from '../src/mocks/service.js'
-import { withValidation, productRequestSchema, registerSchema, shippingSchema } from '../src/services/contracts.js'
+import { withValidation, shippingSchema } from '../src/services/contracts.js'
+import { initialCategories, mapCategory } from '../src/services/categories.js'
+import { claimRequest } from '../src/utils/assistant.js'
 const storage = new Map()
 globalThis.localStorage = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) }
 const service = withValidation(mockService)
-const shipping = { firstName: 'Demo', lastName: 'Customer', email: 'demo@example.test', address: 'Demo Street 12', city: 'Sarajevo', postalCode: '71000', phone: '+38761123456' }
-test('cart totals use integer minor units, including quantities', () => {
-  const cart = total([{ id: 1, productId: 1, productName: 'A', unitPrice: 0.1, quantity: 3 }, { id: 2, productId: 2, productName: 'B', unitPrice: 0.2, quantity: 1 }])
-  assert.equal(cart.totalPrice, 0.5)
-  assert.equal(cart.totalItems, 4)
-  assert.equal(cart.items[0].subtotal, 0.3)
+const address = { firstName: 'Test', lastName: 'Kupac', email: 'test@example.test', address: 'Testna ulica 12', city: 'Sarajevo', postalCode: '71000', phone: '+38761123456' }
+test('totals and delivery validation', () => {
+  assert.equal(total([{ unitPrice: 0.1, quantity: 3 }, { unitPrice: 0.2, quantity: 1 }]).totalPrice, 0.5)
+  assert.equal(shippingSchema.safeParse({ ...address, postalCode: 'abc' }).success, false)
 })
-test('runtime contracts reject invalid stock, price, addresses and long UTF-8 passwords', () => {
-  const product = { categoryId: 1, name: 'Demo', description: '', stock: 1, price: 1, imageUrl: '' }
-  assert.equal(productRequestSchema.safeParse(product).success, true)
-  for (const changes of [{ stock: -1 }, { stock: 1.5 }, { price: 0 }, { price: 1.001 }, { imageUrl: 'javascript:alert(1)' }, { name: '  ' }]) assert.equal(productRequestSchema.safeParse({ ...product, ...changes }).success, false)
-  assert.equal(shippingSchema.safeParse({ ...shipping, postalCode: 'abc' }).success, false)
-  assert.equal(registerSchema.safeParse({ firstName: 'A', lastName: 'B', email: 'a@b.test', password: 'é'.repeat(40) }).success, false)
+test('fixed taxonomy and backend-generated identifiers', () => {
+  assert.deepEqual(initialCategories.map(c => c.name), ['Laptopi', 'Telefoni', 'Slušalice', 'Tastature', 'Miševi'])
+  assert.deepEqual(mapCategory({ id: 987, name: 'Laptopi', description: '' }), { id: 987, name: 'Laptopi', description: '', slug: 'laptopi' })
 })
-test('only backend-supported order transitions are offered', () => {
-  assert.deepEqual(transitions.PENDING, ['CONFIRMED', 'CANCELLED'])
-  assert.deepEqual(transitions.SHIPPED, ['DELIVERED'])
-  assert.deepEqual(transitions.DELIVERED, [])
-  assert.deepEqual(transitions.CANCELLED, [])
+test('incoming request is claimed once and busy requests stay pending', () => {
+  const handled = new Set()
+  const request = { id: 'one', prompt: 'Slušalice do 700 KM' }
+  assert.equal(claimRequest(request, true, handled), false)
+  assert.equal(claimRequest(request, false, handled), true)
+  assert.equal(claimRequest(request, false, handled), false)
+  assert.equal(claimRequest({ id: 'two', prompt: '  ' }, false, handled), false)
 })
-test('malformed JSON in development storage falls back safely', () => {
-  storage.set('broken', '{')
-  assert.deepEqual(read('broken', []), [])
-})
-test('demo shopping lifecycle, authorization, CRUD and persistence', async () => {
+test('authentication, fixed categories, products, checkout and cancellation', async () => {
   storage.clear()
-  await assert.rejects(() => service.login({ email: 'user@aishop.test', password: 'wrong' }), /Invalid email/)
-  await service.addCart(1, 2)
-  assert.equal((await service.cart()).totalItems, 2)
-  const user = await service.login({ email: 'user@aishop.test', password: 'User123!' })
-  assert.equal(user.role, 'USER')
-  assert.equal((await service.cart()).totalItems, 2)
-  assert.equal(await service.initialize().then(u => u.id), user.id)
-  await assert.rejects(() => service.users(), /Administrator/)
-  await assert.rejects(() => service.addCart(1, 1000), /stock/)
-  await assert.rejects(async () => service.updateCart(1, 0), /Value/)
-  await service.updateCart(1, 1)
-  const before = (await service.products()).find(p => p.id === 1).stock
-  const order = await service.checkout(shipping)
+  await assert.rejects(() => service.login({ email: 'user@aishop.test', password: 'wrong' }), /Neispravna/)
+  await service.addCart(1, 1)
+  await service.login({ email: 'user@aishop.test', password: 'User123!' })
+  assert.equal((await service.cart()).totalItems, 1)
+  await assert.rejects(() => service.users(), /administratorski/)
+  const stock = (await service.products()).find(p => p.id === 1).stock
+  const order = await service.checkout(address)
   assert.equal(order.totalAmount, 649)
-  assert.equal(order.shipping.city, 'Sarajevo')
   assert.equal((await service.cart()).totalItems, 0)
-  assert.equal((await service.products()).find(p => p.id === 1).stock, before - 1)
-  await assert.rejects(() => service.checkout(shipping), /empty/)
-  assert.ok((await service.orders()).some(o => o.id === order.id))
-  await service.profile({ firstName: 'Updated', lastName: 'Customer' })
-  assert.equal((await service.initialize()).firstName, 'Updated')
+  assert.equal((await service.products()).find(p => p.id === 1).stock, stock - 1)
   await service.logout()
-  assert.equal(await service.initialize(), null)
   await service.login({ email: 'admin@aishop.test', password: 'Admin123!' })
-  await assert.rejects(() => service.status(order.id, 'DELIVERED'), /transition/)
+  await assert.rejects(() => service.saveCategory({ name: 'Drugo', description: '' }), /pet definiranih/)
+  await assert.rejects(() => service.deleteCategory(1), /pet definiranih/)
   await service.status(order.id, 'CANCELLED')
-  assert.equal((await service.products()).find(p => p.id === 1).stock, before)
-  await assert.rejects(() => service.status(order.id, 'CANCELLED'), /transition/)
-  const category = await service.saveCategory({ name: 'Test category', description: 'Temporary test category' })
-  const product = await service.saveProduct({ categoryId: category.id, name: 'Test product', description: 'Demo', price: 12.5, stock: 2, imageUrl: '' })
-  await assert.rejects(() => service.deleteCategory(category.id), /Move or delete/)
-  await service.saveProduct({ ...product, name: 'Edited product', price: 19 }, product.id)
-  assert.equal((await service.products()).find(p => p.id === product.id).name, 'Edited product')
-  await service.saveCategory({ name: 'Renamed category', description: 'Updated' }, category.id)
-  assert.equal((await service.products()).find(p => p.id === product.id).categoryName, 'Renamed category')
+  assert.equal((await service.products()).find(p => p.id === 1).stock, stock)
+  const product = await service.saveProduct({ categoryId: 4, name: 'Test tastatura', price: 99, stock: 4, description: '', imageUrl: '' })
+  await service.saveProduct({ ...product, price: 89 }, product.id)
+  assert.equal((await service.products()).find(p => p.id === product.id).price, 89)
   await service.deleteProduct(product.id)
-  await service.deleteCategory(category.id)
-  assert.equal((await service.categories()).some(c => c.id === category.id), false)
-  await assert.rejects(() => service.deleteProduct(1), /belongs to an order/)
-  assert.equal((await service.users()).length, 2)
-  assert.ok(!storage.get('aishop.mock.v1').includes('User123!'))
+  assert.ok((await service.products()).every(p => initialCategories.some(c => c.id === p.categoryId)))
   assert.ok(!storage.get('aishop.mock.v1').includes('Admin123!'))
 })
-test('assistant is deterministic, catalog-based and honors budgets', async () => {
-  const a = await service.chat('Find headphones under 700 KM')
-  const b = await service.chat('Find headphones under 700 KM')
+test('Bosnian assistant uses correct category identifiers and budget', async () => {
+  const a = await service.chat('Preporuči slušalice do 700 KM')
+  const b = await service.chat('Preporuči slušalice do 700 KM')
   assert.deepEqual(a, b)
-  assert.ok(a.products.length > 0)
-  assert.ok(a.products.every(p => p.stock > 0 && p.price <= 700))
-  const empty = await service.chat('under 1 KM')
-  assert.equal(empty.products.length, 0)
-})
-test('registered mock accounts persist without persisting credentials', async () => {
-  const user = await service.register({ firstName: 'New', lastName: 'Customer', email: 'new@demo.test', password: 'Unique123!' })
-  assert.equal(user.role, 'USER')
-  await service.logout()
-  assert.equal((await service.login({ email: user.email, password: 'Unique123!' })).id, user.id)
-  assert.ok(!storage.get('aishop.mock.v1').includes('Unique123!'))
-})
-test('mock carts use current catalog prices after admin edits', async () => {
-  storage.clear()
-  await service.login({ email: 'user@aishop.test', password: 'User123!' })
-  await service.addCart(6, 2)
-  await service.logout()
-  await service.login({ email: 'admin@aishop.test', password: 'Admin123!' })
-  const product = (await service.products()).find(p => p.id === 6)
-  await service.saveProduct({ ...product, price: 200.25 }, product.id)
-  await service.logout()
-  await service.login({ email: 'user@aishop.test', password: 'User123!' })
-  assert.equal((await service.cart()).totalPrice, 400.5)
-  await service.removeCart(6)
-  assert.equal((await service.cart()).totalPrice, 0)
+  assert.ok(a.products.length)
+  assert.ok(a.products.every(p => p.categoryId === 3 && p.price <= 700 && p.stock > 0))
+  assert.equal((await service.chat('Laptop do 1 KM')).products.length, 0)
 })

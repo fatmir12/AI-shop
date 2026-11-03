@@ -1,3 +1,5 @@
+import { mapCategory } from '../categories.js';
+import { t } from "../../i18n/bs.js";
 import axios from 'axios';
 import { z } from 'zod';
 import { authSchema, productSchema, categorySchema, cartSchema, orderSchema, userSchema, validate } from '../contracts.js';
@@ -35,11 +37,11 @@ http.interceptors.response.use(r => r, error => {
     tokens = null;
     window.dispatchEvent(new Event('aishop:session-expired'));
   }
-  const message = axios.isAxiosError(error) ? typeof error.response?.data?.message === 'string' ? error.response.data.message : error.response?.status === 401 ? 'Your session has expired. Please sign in again.' : error.response?.status === 403 ? 'Access denied by the backend.' : error.response ? `API request failed (${error.response.status}).` : 'Cannot reach the backend. Check that Spring Boot is available on port 8081.' : error.message || 'API request failed.';
+  const message = axios.isAxiosError(error) ? error.response?.status === 401 ? t("Your session has expired. Please sign in again.") : error.response?.status === 403 ? t("Access denied by the backend.") : error.response ? `Zahtjev nije uspio (${error.response.status}).` : t("Cannot reach the backend. Check that Spring Boot is available on port 8081.") : error.message || t("API request failed.");
   return Promise.reject(new Error(message));
 });
 const unsupported = async () => {
-  throw new Error('This feature has no endpoint in the current Spring Boot backend. See BACKEND_INTEGRATION.md.');
+  throw new Error(t("This feature has no endpoint in the current Spring Boot backend. See BACKEND_INTEGRATION.md."));
 };
 const authenticate = async (path, input) => {
   tokens = validate(authSchema, (await http.post(path, input)).data);
@@ -69,7 +71,7 @@ export const apiService = {
     return validate(z.array(productSchema), (await http.get('/products')).data);
   },
   async categories() {
-    return validate(z.array(categorySchema), (await http.get('/categories')).data);
+    return validate(z.array(categorySchema), (await http.get('/categories')).data).map(mapCategory);
   },
   async saveProduct(input, id) {
     return validate(productSchema, (id ? await http.put(`/products/${id}`, input) : await http.post('/products', input)).data);
@@ -104,7 +106,7 @@ export const apiService = {
     return validate(z.array(orderSchema), (await http.get(all ? '/orders' : '/orders/my')).data);
   },
   checkout: async () => {
-    throw new Error('The backend can create an order from the cart, but cannot store shipping details. Checkout is blocked until the shipping contract is agreed.');
+    throw new Error(t("The backend can create an order from the cart, but cannot store shipping details. Checkout is blocked until the shipping contract is agreed."));
   },
   async createOrderFromCart() {
     return validate(orderSchema, (await http.post('/orders')).data);

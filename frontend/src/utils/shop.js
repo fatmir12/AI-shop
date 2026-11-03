@@ -28,4 +28,4 @@ export function read(key, fallback) {
 export function write(key, data) {
   localStorage.setItem(key, JSON.stringify(data));
 }
-export const errorMessage = error => error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+export const errorMessage = error => error instanceof Error ? error.message : 'Došlo je do greške. Pokušajte ponovo.';

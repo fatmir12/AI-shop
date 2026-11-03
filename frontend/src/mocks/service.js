@@ -1,17 +1,31 @@
+import { initialCategories, taxonomyError } from '../services/categories.js';
+import { t } from "../i18n/bs.js";
 import * as seed from './data.js';
 import { read, write, total, transitions } from '../utils/shop.js';
 const key = 'aishop.mock.v1';
-const load = () => read(key, structuredClone({ ...seed, carts: {} }));
+const load = () => {
+  const db = read(key, structuredClone({ ...seed, carts: {} }));
+  if (db.taxonomyVersion !== 2) {
+    db.products = db.products.map(product => {
+      const replacement = seed.products.find(item => item.id === product.id);
+      return replacement ? { ...replacement, price: product.price, stock: product.stock } : { ...product, categoryId: initialCategories.some(c => c.id === product.categoryId) ? product.categoryId : 1 };
+    });
+    db.categories = structuredClone(initialCategories);
+    db.taxonomyVersion = 2;
+    write(key, db);
+  }
+  return db;
+};
 const save = db => write(key, db);
 const pause = () => new Promise(resolve => setTimeout(resolve, 250));
 const session = () => read('aishop.session', null);
 const current = () => {
   const user = load().users.find(u => u.id === session());
-  if (!user) throw new Error('Please sign in to continue.');
+  if (!user) throw new Error(t("Please sign in to continue."));
   return user;
 };
 const admin = () => {
-  if (current().role !== 'ADMIN') throw new Error('Administrator access required.');
+  if (current().role !== 'ADMIN') throw new Error(t("Administrator access required."));
 };
 const cartKey = () => String(session() ?? 'guest');
 const getCart = () => {
@@ -19,7 +33,11 @@ const getCart = () => {
   const items = db.carts[cartKey()]?.items ?? [];
   return total(items.flatMap(item => {
     const product = db.products.find(product => product.id === item.productId);
-    return product ? [{ ...item, productName: product.name, unitPrice: product.price }] : [];
+    return product ? [{
+      ...item,
+      productName: product.name,
+      unitPrice: product.price
+    }] : [];
   }));
 };
 const setCart = cart => {
@@ -60,14 +78,14 @@ export const mockService = {
     const email = input.email.trim().toLowerCase();
     const expected = email === 'user@aishop.test' ? 'User123!' : email === 'admin@aishop.test' ? 'Admin123!' : credentials.get(email);
     const user = load().users.find(u => u.email === email);
-    if (!user || !expected || input.password !== expected) throw new Error('Invalid email or password. Newly registered mock passwords only last until reload.');
+    if (!user || !expected || input.password !== expected) throw new Error(t("Invalid email or password. Newly registered mock passwords only last until reload."));
     return signIn(user);
   },
   async register(input) {
     await pause();
     const db = load();
     const email = input.email.trim().toLowerCase();
-    if (db.users.some(u => u.email === email)) throw new Error('This email is already registered.');
+    if (db.users.some(u => u.email === email)) throw new Error(t("This email is already registered."));
     const user = {
       id: Date.now(),
       firstName: input.firstName.trim(),
@@ -98,13 +116,13 @@ export const mockService = {
     const db = load();
     return db.products.map(p => ({
       ...p,
-      categoryName: db.categories.find(c => c.id === p.categoryId)?.name ?? 'Uncategorized'
+      categoryName: db.categories.find(c => c.id === p.categoryId)?.name ?? t("Uncategorized")
     }));
   },
   async saveProduct(input, id) {
     admin();
     const db = load();
-    if (!db.categories.some(c => c.id === input.categoryId) || input.price <= 0 || !Number.isInteger(input.stock) || input.stock < 0) throw new Error('Check category, price and stock.');
+    if (!db.categories.some(c => c.id === input.categoryId) || input.price <= 0 || !Number.isInteger(input.stock) || input.stock < 0) throw new Error(t("Check category, price and stock."));
     const product = {
       ...input,
       id: id ?? Date.now(),
@@ -117,7 +135,7 @@ export const mockService = {
   async deleteProduct(id) {
     admin();
     const db = load();
-    if (db.orders.some(o => o.items.some(i => i.productId === id))) throw new Error('This product belongs to an order and cannot be deleted. Set its stock to zero instead.');
+    if (db.orders.some(o => o.items.some(i => i.productId === id))) throw new Error(t("This product belongs to an order and cannot be deleted. Set its stock to zero instead."));
     db.products = db.products.filter(p => p.id !== id);
     for (const k of Object.keys(db.carts)) db.carts[k] = total(db.carts[k].items.filter(i => i.productId !== id));
     save(db);
@@ -126,26 +144,8 @@ export const mockService = {
     await pause();
     return load().categories;
   },
-  async saveCategory(input, id) {
-    admin();
-    const db = load();
-    if (db.categories.some(c => c.id !== id && c.name.toLowerCase() === input.name.trim().toLowerCase())) throw new Error('Category already exists.');
-    const category = {
-      ...input,
-      name: input.name.trim(),
-      id: id ?? Date.now()
-    };
-    db.categories = id ? db.categories.map(c => c.id === id ? category : c) : [...db.categories, category];
-    save(db);
-    return category;
-  },
-  async deleteCategory(id) {
-    admin();
-    const db = load();
-    if (db.products.some(p => p.categoryId === id)) throw new Error('Move or delete products in this category first.');
-    db.categories = db.categories.filter(c => c.id !== id);
-    save(db);
-  },
+  async saveCategory() { admin(); throw new Error(taxonomyError); },
+  async deleteCategory() { admin(); throw new Error(taxonomyError); },
   async cart() {
     return getCart();
   },
@@ -153,7 +153,7 @@ export const mockService = {
     const product = load().products.find(p => p.id === productId);
     const cart = getCart();
     const existing = cart.items.find(i => i.productId === productId);
-    if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity + (existing?.quantity ?? 0) > product.stock) throw new Error('The requested quantity is not in stock.');
+    if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity + (existing?.quantity ?? 0) > product.stock) throw new Error(t("The requested quantity is not in stock."));
     if (existing) existing.quantity += quantity;else cart.items.push({
       id: productId,
       productId,
@@ -168,7 +168,7 @@ export const mockService = {
     const cart = getCart();
     const item = cart.items.find(i => i.id === id);
     const product = load().products.find(p => p.id === item?.productId);
-    if (!item || !product || !Number.isInteger(quantity) || quantity < 1 || quantity > product.stock) throw new Error('The requested quantity is not in stock.');
+    if (!item || !product || !Number.isInteger(quantity) || quantity < 1 || quantity > product.stock) throw new Error(t("The requested quantity is not in stock."));
     item.quantity = quantity;
     return setCart(total(cart.items));
   },
@@ -186,10 +186,10 @@ export const mockService = {
     const user = current();
     const db = load();
     const cart = getCart();
-    if (!cart.items.length) throw new Error('Your bag is empty.');
+    if (!cart.items.length) throw new Error(t("Your bag is empty."));
     for (const item of cart.items) {
       const p = db.products.find(p => p.id === item.productId);
-      if (!p || p.stock < item.quantity) throw new Error(`Insufficient stock for ${item.productName}.`);
+      if (!p || p.stock < item.quantity) throw new Error(`Nedovoljna zaliha za ${item.productName}.`);
       item.unitPrice = p.price;
     }
     const order = {
@@ -211,7 +211,7 @@ export const mockService = {
     admin();
     const db = load();
     const order = db.orders.find(o => o.id === id);
-    if (!order || !transitions[order.status].includes(status)) throw new Error('Invalid order status transition.');
+    if (!order || !transitions[order.status].includes(status)) throw new Error(t("Invalid order status transition."));
     if (status === 'CANCELLED') for (const item of order.items) {
       const product = db.products.find(p => p.id === item.productId);
       if (product) product.stock += item.quantity;
@@ -227,16 +227,13 @@ export const mockService = {
   },
   async chat(prompt) {
     await new Promise(resolve => setTimeout(resolve, 700));
-    const text = prompt.toLowerCase();
-    const budget = text.match(/(?:under|below|budget|max)\s*(\d+)/)?.[1];
+    const text = prompt.toLocaleLowerCase('bs-BA');
+    const budget = text.match(/(?:do|ispod|budžet|under|below|max)\s*(\d+)/)?.[1];
     let catalog = await this.products();
-    const matches = catalog.filter(p => `${p.name} ${p.description} ${p.categoryName}`.toLowerCase().split(/\W+/).some(word => word.length > 3 && text.includes(word)));
-    if (matches.length) catalog = matches;
-    if (budget) catalog = catalog.filter(p => p.price <= Number(budget));
-    catalog = catalog.filter(p => p.stock > 0).sort((a, b) => a.price - b.price).slice(0, 3);
-    return {
-      content: catalog.length ? `Here are ${catalog.length} in-stock picks${budget ? ` under ${budget} KM` : ' from our catalog'} that could be a good fit. ${catalog.map(p => `${p.name}: ${p.description.split('.')[0]}.`).join(' ')} Tell me your budget or what you will use it for to narrow things down. This is a simulated shopping assistant.` : 'I could not find an in-stock match within that budget. Try a higher budget, or ask about audio, computers, accessories, wearables, or smart home.',
-      products: catalog
-    };
+    const slug = /laptop|posao/.test(text) ? 'laptopi' : /telefon|mobitel/.test(text) ? 'telefoni' : /sluš|slus|headphone/.test(text) ? 'slusalice' : /tastatur|keyboard/.test(text) ? 'tastature' : /miš|mise|mouse/.test(text) ? 'misevi' : null;
+    const category = initialCategories.find(c => c.slug === slug);
+    if (category) catalog = catalog.filter(p => p.categoryId === category.id);
+    catalog = catalog.filter(p => p.stock > 0 && (!budget || p.price <= Number(budget))).sort((a,b) => a.price-b.price).slice(0,3);
+    return { content: catalog.length ? 'Dostupni proizvodi prema vašem upitu: ' + catalog.map(p => p.name + ' — ' + p.description).join(' ') + ' Ovo je probna preporuka iz kataloga.' : 'Nema dostupnih proizvoda za navedene uslove. Pokušajte s drugim budžetom ili kategorijom.', products: catalog };
   }
 };

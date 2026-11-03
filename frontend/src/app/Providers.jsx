@@ -1,3 +1,4 @@
+import { t } from "../i18n/bs.js";
 import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -49,7 +50,7 @@ function StateProvider({
       setUser(null);
       cache.clear();
       setToast({
-        text: 'Your session has expired. Please sign in again.',
+        text: t("Your session has expired. Please sign in again."),
         error: true
       });
     };
@@ -93,10 +94,10 @@ function StateProvider({
         cache.clear();
       }
     },
-    add: (product, quantity = 1) => changeCart(() => service.addCart(product.id, quantity), `${product.name} added to your bag`),
+    add: (product, quantity = 1) => changeCart(() => service.addCart(product.id, quantity), `${product.name}: proizvod je dodan u korpu.`),
     update: (id, quantity) => changeCart(() => service.updateCart(id, quantity)),
-    remove: id => changeCart(() => service.removeCart(id), 'Item removed')
-  }}>{children}{query.isError && <div className="global-error" role="alert">{errorMessage(query.error)} <button onClick={() => void query.refetch()}>Retry cart</button></div>}{toast && <div role={toast.error ? 'alert' : 'status'} className={`toast ${toast.error ? 'toast-error' : ''}`}>{toast.error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}<span>{toast.text}</span><button aria-label="Dismiss notification" onClick={() => setToast(null)}><X size={18} /></button></div>}</AppContext.Provider>;
+    remove: id => changeCart(() => service.removeCart(id), t("Item removed"))
+  }}>{children}{query.isError && <div className="global-error" role="alert">{errorMessage(query.error)} <button onClick={() => void query.refetch()}>{t("Retry cart")}</button></div>}{toast && <div role={toast.error ? 'alert' : 'status'} className={`toast ${toast.error ? 'toast-error' : ''}`}>{toast.error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}<span>{toast.text}</span><button aria-label={t("Dismiss notification")} onClick={() => setToast(null)}><X size={18} /></button></div>}</AppContext.Provider>;
 }
 export default function Providers({
   children

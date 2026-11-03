@@ -1,7 +1,11 @@
+import { categoryNavigation, allProductsNavigation } from '../utils/navigation.js';
+import { t } from "../i18n/bs.js";
 import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, Search, ShoppingBag, UserRound, ArrowUpRight, Menu, X, LayoutDashboard, Package, Tags, Users, ClipboardList, LogOut, Truck, ShieldCheck, Headphones } from 'lucide-react';
 import { useApp } from '../app/context';
+import AIAssistantBar from './AIAssistantBar.jsx';
+import { useCategories } from '../features/products.jsx';
 import { isMock } from '../services';
 function Logo() {
   return <Link to="/" className="logo"><span><Sparkles size={22} fill="currentColor" /></span>AIShop<span className="logo-dot">.</span></Link>;
@@ -14,14 +18,12 @@ export function StoreLayout() {
     notify
   } = useApp();
   const [open, setOpen] = useState(false);
+  const categories = useCategories();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
-  return <><div className="announcement">A little smarter. A lot more you. <span>Meet your AI shopping companion <ArrowUpRight size={13} /></span><small>{isMock ? 'DEVELOPMENT · MOCK MODE' : 'LIVE API MODE'}</small></div><header className="store-header"><div className="container nav-main"><Logo /><form className="nav-search" onSubmit={e => {
-          e.preventDefault();
-          const data = new FormData(e.currentTarget);
-          navigate(`/products?q=${encodeURIComponent(String(data.get('q')))}`);
-        }}><Search size={18} /><input name="q" aria-label="Search products" placeholder="Search for your next favorite thing..." /><kbd>↵</kbd></form><div className="nav-actions"><Link to={user?.role === 'ADMIN' ? '/admin' : user ? '/account' : '/login'} className="account-link"><UserRound size={21} /><span>{user ? user.firstName : 'Sign in'}</span></Link><Link className="bag-link" to="/cart" aria-label={`Shopping bag, ${cart.totalItems} items`}><ShoppingBag size={22} /><b>{cart.totalItems}</b></Link><button className="mobile-toggle icon-btn" aria-label="Toggle navigation" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button></div></div><nav className={`container nav-links ${open ? 'open' : ''}`} onClick={() => setOpen(false)}><NavLink to="/" end>Home</NavLink><NavLink to="/products">Shop all</NavLink><Link to="/products?category=1">Audio</Link><Link to="/products?category=2">Computers</Link><Link to="/products?category=3">Accessories</Link><Link to="/products?category=4">Smart home</Link><NavLink className="ai-link" to="/assistant"><Sparkles size={16} /> AI Assistant <span>Try it</span></NavLink>{user && <button className="logout" onClick={() => {
+  return <><header className="store-header"><div className="container nav-main"><Logo /><Link className="icon-btn nav-search-link" to="/products" aria-label={t("Search products")}><Search size={20} /></Link><div className="nav-actions"><Link to={user?.role === 'ADMIN' ? '/admin' : user ? '/account' : '/login'} className="account-link"><UserRound size={21} /><span>{user ? user.firstName : t("Sign in")}</span></Link><Link className="bag-link" to="/cart" aria-label={`Korpa: ${cart.totalItems} proizvoda`}><ShoppingBag size={22} /><b>{cart.totalItems}</b></Link><button className="mobile-toggle icon-btn" aria-label={t("Toggle navigation")} aria-expanded={open} aria-controls="store-navigation" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button></div></div><nav id="store-navigation" className={`container nav-links ${open ? 'open' : ''}`} onClick={() => setOpen(false)}><NavLink to="/" end>{t("Home")}</NavLink><Link to="/products" className={allProductsNavigation(pathname, search) ? 'active' : ''} aria-current={allProductsNavigation(pathname, search) ? 'page' : undefined}>{t("Shop all")}</Link>{categories.data?.map(category => <Link key={category.id} to={`/products?category=${category.id}`} className={categoryNavigation(pathname, search, category.id) ? 'active' : ''} aria-current={categoryNavigation(pathname, search, category.id) ? 'page' : undefined}>{category.name}</Link>)}<NavLink className="ai-link" to="/assistant"><Sparkles size={16} />{t("AI Assistant")}<span>{t("Try it")}</span></NavLink>{user && <button className="logout" onClick={() => {
           void logout().then(() => navigate('/')).catch(e => notify(e.message, true));
-        }}>Sign out</button>}</nav></header><main><Outlet /></main><section className="benefits container"><div><Truck /><span><strong>Thoughtfully delivered</strong><small>Free delivery on every demo order</small></span></div><div><ShieldCheck /><span><strong>Shop with confidence</strong><small>Transparent prices, always in KM</small></span></div><div><Headphones /><span><strong>A little help, anytime</strong><small>Your AI assistant is one click away</small></span></div></section><footer><div className="container footer-grid"><div><Logo /><p>Good finds. Smarter choices.<br />Everyday essentials, picked for you.</p></div><div><strong>Explore</strong><Link to="/products">All products</Link><Link to="/assistant">AI shopping assistant</Link><Link to="/cart">Shopping bag</Link></div><div><strong>Your space</strong><Link to="/account">My account</Link><Link to="/account/orders">My orders</Link><Link to="/login">Sign in</Link></div><div><strong>Built for a smarter everyday.</strong><p>A curated selection of technology<br />that fits into your life.</p><span className="badge">{isMock ? 'Demo experience · No real payments' : 'Connected to Spring Boot'}</span></div></div><div className="container footer-bottom"><span>© {new Date().getFullYear()} AIShop. A smarter kind of shopping.</span><span>Bosnia & Herzegovina · BAM (KM)</span></div></footer></>;
+        }}>{t("Sign out")}</button>}</nav></header><AIAssistantBar /><main><Outlet /></main><footer><div className="container footer-grid"><div><Logo /><p>{t("Laptopi, telefoni i ra\u010Dunarska oprema.")}</p></div><div><strong>{t("Prodavnica")}</strong><Link to="/products">{t("Svi proizvodi")}</Link><Link to="/assistant">{t("AI asistent")}</Link><Link to="/cart">{t("Korpa")}</Link></div><div><strong>{t("Korisni\u010Dki ra\u010Dun")}</strong><Link to="/account">{t("Moj profil")}</Link><Link to="/account/orders">{t("Moje narud\u017Ebe")}</Link></div></div><div className="container footer-bottom"><span>© {new Date().getFullYear()} AIShop</span><span>{t("Bosna i Hercegovina \xB7 BAM (KM)")}</span></div></footer></>;
 }
 export function AdminLayout() {
   const {
@@ -32,28 +34,28 @@ export function AdminLayout() {
   const [open, setOpen] = useState(false);
   const links = [{
     to: '/admin',
-    label: 'Overview',
+    label: t("Overview"),
     Icon: LayoutDashboard
   }, {
     to: '/admin/products',
-    label: 'Products',
+    label: t("Products"),
     Icon: Package
   }, {
     to: '/admin/categories',
-    label: 'Categories',
+    label: t("Categories"),
     Icon: Tags
   }, {
     to: '/admin/orders',
-    label: 'Orders',
+    label: t("Orders"),
     Icon: ClipboardList
   }, {
     to: '/admin/users',
-    label: 'Customers',
+    label: t("Customers"),
     Icon: Users
   }];
-  return <div className="admin-shell"><aside className={open ? 'admin-sidebar open' : 'admin-sidebar'}><Logo /><span className="eyebrow">WORKSPACE</span><nav>{links.map(({
+  return <div className="admin-shell"><aside id="admin-navigation" className={open ? 'admin-sidebar open' : 'admin-sidebar'}><Logo /><span className="eyebrow">{t("WORKSPACE")}</span><nav>{links.map(({
           to,
           label,
           Icon
-        }) => <NavLink key={to} to={to} end={to === '/admin'} onClick={() => setOpen(false)}><Icon size={19} />{label}</NavLink>)}</nav><div className="sidebar-bottom"><Link to="/">← Visit storefront</Link><button onClick={() => void logout().finally(() => navigate('/login'))}><LogOut size={18} /> Sign out</button><small>AIShop Administration</small></div></aside><div className="admin-content"><header className="admin-header"><button className="mobile-toggle icon-btn" onClick={() => setOpen(!open)} aria-label="Toggle sidebar"><Menu /></button><span>Workspace <span className="muted">/ Administration</span></span><div><span className="badge">{isMock ? 'Development mock' : 'API mode'}</span><span className="avatar">{user?.firstName[0]}</span></div></header><main className="admin-main"><Outlet /></main></div></div>;
+        }) => <NavLink key={to} to={to} end={to === '/admin'} onClick={() => setOpen(false)}><Icon size={19} />{label}</NavLink>)}</nav><div className="sidebar-bottom"><Link to="/">{t("\u2190 Visit storefront")}</Link><button onClick={() => void logout().finally(() => navigate('/login'))}><LogOut size={18} />{t("Sign out")}</button><small>{t("AIShop Administration")}</small></div></aside><div className="admin-content"><header className="admin-header"><button className="mobile-toggle icon-btn" onClick={() => setOpen(!open)} aria-label={t("Toggle sidebar")} aria-expanded={open} aria-controls="admin-navigation"><Menu /></button><span>{t("Workspace")}<span className="muted">{t("/ Administration")}</span></span><div><span className="badge">{isMock ? t("Development mock") : t("API mode")}</span><span className="avatar">{user?.firstName[0]}</span></div></header><main className="admin-main"><Outlet /></main></div></div>;
 }

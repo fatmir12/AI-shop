@@ -55,3 +55,7 @@ Set `VITE_DATA_SOURCE=api` in `.env.local` and restart Vite. The existing `/api`
 See [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md) for exact endpoints, schemas, security details and missing AI, shipping, profile, recovery and user-management contracts. API authentication is memory-only, so a page reload requires signing in again. API checkout is blocked until shipping persistence is agreed with the backend team.
 
 For production hosting, configure an SPA index fallback and `/api` reverse proxy. External image URLs have a local fallback. Mock storage can be reset by removing only localStorage keys beginning with `aishop.`.
+
+## Bosnian catalog redesign
+
+The storefront and admin interface use centralized Bosnian translations in `src/i18n/bs.js`. The taxonomy is exactly Laptopi, Telefoni, Slušalice, Tastature and Miševi; mock category management is read-only. See `src/services/categories.js` for stable mock IDs and the database DTO mapping. The compact blue assistant bar forwards UUID-tagged requests to the existing chat through router state. No backend is needed for guest mock conversations.

@@ -86,3 +86,17 @@ Spring Security disables CSRF and has no explicit CORS configuration. The develo
 ## Verification and development storage
 
 Run `npm install`, `npm run lint`, `npm test`, `npm run build`, and `npm run dev` from `frontend/`. Mock data lives at `aishop.mock.v1`, session user ID at `aishop.session`, and assistant messages at `aishop.chat.<userId>` in localStorage. These are development simulations, not a security boundary. New mock user passwords live only in memory; after reload, the safe ID-only session remains until logout, but logging back into a newly registered account requires a new development session. Demo credentials remain usable. To reset the demo, clear only the `aishop.*` localStorage keys. Never enter real customer data into this local demo.
+
+## Bosnian storefront and fixed taxonomy
+
+The UI uses Bosnian Latin text through `src/i18n/bs.js`, with bs-BA date/currency formatting. Stored enum values and API field names remain unchanged; order statuses and roles have localized labels.
+
+The catalog taxonomy is exactly Laptopi, Telefoni, Slušalice, Tastature, Miševi. `src/services/categories.js` owns the five initial records, their mock IDs (1–5) and frontend slugs. Mock category mutation methods reject creation, renaming and deletion, and the admin category screen is read-only. Product CRUD remains available.
+
+The existing Java Category entity has `{id,name,description}` and no slug. `mapCategory()` adds frontend navigation metadata without changing the backend ID. All product relationships, filters, links and forms use `categoryId`/`category.id`; database IDs need not match mock IDs. API categories continue to come from GET /api/categories. The backend developer must seed the five agreed names and enforce the fixed taxonomy server-side; existing backend category CRUD currently permits arbitrary categories. Do not seed guessed IDs. No new endpoint is assumed.
+
+Existing local mock storage receives taxonomy version 2 on first access: known seeded product IDs are adapted to the new electronics catalog, retaining modified prices and stocks. Users, sessions, orders and carts are retained. Historical order snapshots remain unchanged. Custom products are retained; administrators should verify their category assignments after migration. New data uses the five-category seed directly.
+
+`AIAssistantBar.jsx` appears once below the storefront navigation and outside the admin layout. It sends a UUID-tagged request through React Router state. The existing assistant consumes that request once (including React StrictMode effect replay), clears the navigation state, and invokes the same chat service used for manual messages. Busy conversations retain pending navigation requests until ready. Existing per-user chat history stays intact. Mock guests may use the assistant. API mode reports the missing AI endpoint explicitly and never calls Ollama directly.
+
+Visual layout follows the supplied reference's white header, blue bar, spacious product imagery, pale-gray product details and rounded blue buttons. Reference logos, promotional offers, installment plans and third-party screenshots are not reused as assets. Product photos remain illustrative with local fallbacks. Browser-based pixel comparison remains to be performed when browser tooling is available.
