@@ -50,18 +50,6 @@ public class CartModifyMcpService {
         }
 
         Integer quantity = null;
-        if (intent == AiToolPolicy.Intent.CART_UPDATE) {
-            quantity = requestedTotal(message);
-            if (quantity == null) {
-                return "Na koliko ukupno komada želite postaviti količinu? "
-                        + "Navedite novu ukupnu količinu, npr. 'na 2 komada'.";
-            }
-            if (quantity < 1) {
-                return "Za uklanjanje stavke koristite naredbu 'Ukloni iz korpe'. "
-                        + "Količina mora biti veća od nule.";
-            }
-        }
-
         try {
             JsonNode cart = unwrapCart(mapper.readTree(getCart.call("{}")), 0);
             JsonNode items = cart.path("items");
@@ -69,7 +57,22 @@ public class CartModifyMcpService {
                 return "Vaša korpa je prazna. Nema stavke koju mogu promijeniti.";
             }
 
-            List<JsonNode> matches = resolveItems(items, message, history);
+            List<JsonNode> catalog = ProductReferenceResolver.catalog(mapper, callbacks);
+            List<JsonNode> cartProducts = catalog.stream().filter(p -> {
+                for (JsonNode item : items) if (item.path("productId").asLong(-1) == p.path("id").asLong(-2)) return true;
+                return false;
+            }).toList();
+            var resolved = ProductReferenceResolver.resolve(cartProducts, message, history);
+            List<JsonNode> matches = new ArrayList<>();
+            for (JsonNode item : items) {
+                if (resolved.stream().anyMatch(p -> p.path("id").asLong(-2) == item.path("productId").asLong(-1))) matches.add(item);
+            }
+            Matcher explicit = CART_ITEM_ID.matcher(normalize(message));
+            if (explicit.find()) {
+                long wanted = Long.parseLong(explicit.group(1));
+                matches.clear();
+                for (JsonNode item : items) if (item.path("id").asLong(-1) == wanted) matches.add(item);
+            }
             if (matches.isEmpty()) {
                 return "Ne mogu pronaći traženi proizvod u vašoj korpi. "
                         + "Provjerite naziv proizvoda. Korpa nije promijenjena.";
@@ -83,6 +86,16 @@ public class CartModifyMcpService {
             long itemId = chosen.path("id").asLong(-1);
             if (itemId <= 0 || chosen.path("productName").asText("").isBlank()) {
                 return "MCP nije vratio ispravan ID stavke korpe. Korpa nije promijenjena.";
+            }
+
+            if (intent == AiToolPolicy.Intent.CART_UPDATE) {
+                quantity = requestedQuantity(message, chosen.path("quantity").asInt());
+                if (quantity == null) return AiToolPolicy.QUANTITY_QUESTION;
+                final int total = quantity;
+                if (total < 1 || total > 100 || cartProducts.stream().noneMatch(p ->
+                        p.path("id").asLong(-1) == chosen.path("productId").asLong(-2)
+                        && ProductReferenceResolver.available(p, total)))
+                    return "Tražena količina nije dozvoljena ili nema dovoljno zaliha. Korpa nije promijenjena.";
             }
 
             var args = mapper.createObjectNode();
@@ -104,6 +117,18 @@ public class CartModifyMcpService {
             return "Nisam uspio pripremiti promjenu korpe preko MCP-a. "
                     + "Korpa nije promijenjena.";
         }
+    }
+
+    static Integer requestedQuantity(String message, int current) {
+        String text = normalize(message);
+        text = text.replaceAll("\\bza jedan\\b", "za 1");
+        Matcher relative = Pattern.compile("\\bza\\s+(\\d{1,6})\\b").matcher(text);
+        if (relative.find()) {
+            int delta = Integer.parseInt(relative.group(1));
+            return text.lastIndexOf("smanji") > text.lastIndexOf("povecaj") ? current - delta : current + delta;
+        }
+        if (text.contains("jos jedan")) return current + 1;
+        return requestedTotal(message);
     }
 
     /** Returns only explicit NEW total quantities; refuses ambiguous relative changes. */
@@ -133,71 +158,6 @@ public class CartModifyMcpService {
         return null;
     }
 
-    private List<JsonNode> resolveItems(JsonNode items, String message,
-                                        List<AiChatRequest.ChatTurn> history) {
-        List<JsonNode> all = new ArrayList<>();
-        for (JsonNode item : items) all.add(item);
-        String text = normalize(message);
-
-        Matcher explicitId = CART_ITEM_ID.matcher(text);
-        if (explicitId.find()) {
-            long wanted = Long.parseLong(explicitId.group(1));
-            return all.stream().filter(i -> i.path("id").asLong(-1) == wanted).toList();
-        }
-
-        List<JsonNode> matched = matchByName(all, text);
-        if (!matched.isEmpty()) return matched;
-
-        // Context is used only for clear references, never to guess an item.
-        if (Pattern.compile("\\b(taj|taj\\s+laptop|ovaj|onaj|njega|njim|takav)\\b")
-                .matcher(text).find() && history != null) {
-            for (int i = history.size() - 1; i >= 0; i--) {
-                AiChatRequest.ChatTurn turn = history.get(i);
-                if ("assistant".equals(turn.role())) {
-                    matched = matchByName(all, normalize(turn.content()));
-                    if (!matched.isEmpty()) return matched;
-                }
-            }
-        }
-
-        // A product category may identify exactly one item in the user's cart.
-        String category = category(text);
-        if (category != null) {
-            return all.stream().filter(i -> normalize(i.path("productName").asText(""))
-                    .contains(category)).toList();
-        }
-        return List.of();
-    }
-
-    private List<JsonNode> matchByName(List<JsonNode> items, String text) {
-        var exact = items.stream().filter(i -> {
-            String name = normalize(i.path("productName").asText(""));
-            return !name.isBlank() && text.contains(name);
-        }).toList();
-        if (!exact.isEmpty()) return exact;
-        // Brand/model reference is accepted only when unambiguous.
-        var tokens = Pattern.compile("\\b(lenov[aou]?|thinkpad[aou]?|elitebook|dell|xps|hp|asus|acer)\\b")
-                .matcher(text);
-        List<String> matchedTokens = new ArrayList<>();
-        while (tokens.find()) {
-            String token = tokens.group(1);
-            if (token.startsWith("lenov")) token = "lenovo";
-            if (token.startsWith("thinkpad")) token = "thinkpad";
-            matchedTokens.add(token);
-        }
-        if (matchedTokens.isEmpty()) return List.of();
-        return items.stream().filter(i -> {
-            String name = normalize(i.path("productName").asText(""));
-            return matchedTokens.stream().anyMatch(name::contains);
-        }).toList();
-    }
-
-    private static String category(String text) {
-        if (text.matches(".*\\b(laptop|laptopa|laptope|laptopi)\\b.*")) return "laptop";
-        if (text.matches(".*\\b(telefon|telefona|telefoni)\\b.*")) return "telefon";
-        return null;
-    }
-
     private ToolCallback find(ToolCallback[] tools, String name) {
         for (ToolCallback t : tools) {
             String actual = t.getToolDefinition().name();
@@ -207,7 +167,7 @@ public class CartModifyMcpService {
         return null;
     }
 
-    private JsonNode unwrapCart(JsonNode node, int depth) throws Exception {
+    JsonNode unwrapCart(JsonNode node, int depth) throws Exception {
         if (node == null || node.isNull() || depth > 8) {
             throw new IllegalStateException("Empty MCP cart response");
         }
