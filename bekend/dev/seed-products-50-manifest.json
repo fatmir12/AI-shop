@@ -1,0 +1,402 @@
+[
+  {
+    "name": "Lenovo IdeaPad Slim 3 15",
+    "category": "Laptopi",
+    "price": "899.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "Acer Aspire 5 A515",
+    "category": "Laptopi",
+    "price": "1099.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "ASUS Vivobook 15 X1504",
+    "category": "Laptopi",
+    "price": "1199.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "HP ProBook 450 G10",
+    "category": "Laptopi",
+    "price": "1599.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "Lenovo ThinkPad E14 Gen 5",
+    "category": "Laptopi",
+    "price": "1699.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "Dell Latitude 5440",
+    "category": "Laptopi",
+    "price": "1899.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "ASUS TUF Gaming A15 FA507",
+    "category": "Laptopi",
+    "price": "2199.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "Lenovo Legion 5 16IRX9",
+    "category": "Laptopi",
+    "price": "2799.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "Apple MacBook Air 13 M3",
+    "category": "Laptopi",
+    "price": "2899.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "Apple MacBook Pro 14 M4 Pro",
+    "category": "Laptopi",
+    "price": "4999.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani."
+  },
+  {
+    "name": "Samsung Galaxy A15 4G 128 GB",
+    "category": "Telefoni",
+    "price": "299.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Xiaomi Redmi Note 13 4G 128 GB",
+    "category": "Telefoni",
+    "price": "399.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Motorola Moto G84 5G 256 GB",
+    "category": "Telefoni",
+    "price": "449.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Samsung Galaxy A35 5G 128 GB",
+    "category": "Telefoni",
+    "price": "599.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Nothing Phone (2a) 128 GB",
+    "category": "Telefoni",
+    "price": "649.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Google Pixel 8a 128 GB",
+    "category": "Telefoni",
+    "price": "899.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Samsung Galaxy S24 256 GB",
+    "category": "Telefoni",
+    "price": "1299.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Apple iPhone 16 128 GB",
+    "category": "Telefoni",
+    "price": "1599.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Google Pixel 9 Pro 128 GB",
+    "category": "Telefoni",
+    "price": "1899.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Samsung Galaxy S25 Ultra 256 GB",
+    "category": "Telefoni",
+    "price": "2599.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane."
+  },
+  {
+    "name": "Logitech M90",
+    "category": "Miševi",
+    "price": "19.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "Logitech M185",
+    "category": "Miševi",
+    "price": "35.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "Microsoft Bluetooth Mouse",
+    "category": "Miševi",
+    "price": "49.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "Logitech M650 Signature",
+    "category": "Miševi",
+    "price": "79.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "Razer DeathAdder Essential",
+    "category": "Miševi",
+    "price": "89.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "SteelSeries Rival 3",
+    "category": "Miševi",
+    "price": "99.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "HyperX Pulsefire Haste 2",
+    "category": "Miševi",
+    "price": "139.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "Logitech G502 HERO",
+    "category": "Miševi",
+    "price": "149.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "Logitech MX Master 3S",
+    "category": "Miševi",
+    "price": "219.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "Razer Viper V3 Pro",
+    "category": "Miševi",
+    "price": "349.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik."
+  },
+  {
+    "name": "Logitech K120",
+    "category": "Tastature",
+    "price": "29.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "Logitech K380",
+    "category": "Tastature",
+    "price": "79.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "Microsoft Designer Compact Keyboard",
+    "category": "Tastature",
+    "price": "109.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "Redragon K552 Kumara",
+    "category": "Tastature",
+    "price": "119.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "HyperX Alloy Origins Core",
+    "category": "Tastature",
+    "price": "189.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "Keychron K2 V2",
+    "category": "Tastature",
+    "price": "199.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "Logitech G413 SE",
+    "category": "Tastature",
+    "price": "219.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "Razer BlackWidow V4 X",
+    "category": "Tastature",
+    "price": "299.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "Logitech MX Mechanical",
+    "category": "Tastature",
+    "price": "349.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "Corsair K100 RGB",
+    "category": "Tastature",
+    "price": "499.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju."
+  },
+  {
+    "name": "JBL Tune 500",
+    "category": "Slušalice",
+    "price": "49.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  },
+  {
+    "name": "Sony MDR-ZX110",
+    "category": "Slušalice",
+    "price": "59.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  },
+  {
+    "name": "JBL Tune 510BT",
+    "category": "Slušalice",
+    "price": "99.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  },
+  {
+    "name": "Anker Soundcore Life Q20",
+    "category": "Slušalice",
+    "price": "119.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  },
+  {
+    "name": "HyperX Cloud II",
+    "category": "Slušalice",
+    "price": "169.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  },
+  {
+    "name": "Samsung Galaxy Buds FE",
+    "category": "Slušalice",
+    "price": "179.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  },
+  {
+    "name": "Sony WH-CH720N",
+    "category": "Slušalice",
+    "price": "219.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  },
+  {
+    "name": "Apple AirPods 4 ANC",
+    "category": "Slušalice",
+    "price": "349.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  },
+  {
+    "name": "Bose QuietComfort Ultra Headphones",
+    "category": "Slušalice",
+    "price": "649.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  },
+  {
+    "name": "Sony WH-1000XM5",
+    "category": "Slušalice",
+    "price": "699.00",
+    "stock": 10,
+    "image_url": null,
+    "sku_review": "Potvrditi SKU, generaciju, boju i sadržaj pakovanja."
+  }
+]

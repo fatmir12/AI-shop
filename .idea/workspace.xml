@@ -5,23 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="41d12d80-a72d-4ad4-99fb-b5f3e48dfe5f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/AiChatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/AiChatService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/AiToolPolicy.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/AiToolPolicy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/CartAddMcpService.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/CartAddMcpService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/CartModifyMcpService.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/CartModifyMcpService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/PendingCartActionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/PendingCartActionService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bekend/src/test/java/com/aishop/backend/service/PendingCartActionServiceTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/test/java/com/aishop/backend/service/PendingCartActionServiceTests.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/assistant.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/assistant.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/index.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/services/adapters/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/services/adapters/api.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DatabaseLocalColorSettings">
+    <colors>
+      <entry key="6afc34e4-bf00-4367-836d-39fa249a6324" value="" />
+    </colors>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -39,61 +36,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="0.056874456215610984" />
-      <entry key="MS500" value="1.1434874190968378" />
-      <entry key="S2" value="5.029490114961055" />
-      <entry key="S5" value="7.8172360984562745" />
-      <entry key="S10" value="9.223638019681554" />
-      <entry key="S30" value="10.388483902766497" />
-      <entry key="S60" value="12.038578839158134" />
-      <entry key="M2" value="24.202234647459576" />
-      <entry key="M5" value="107.93581712531183" />
-      <entry key="M10" value="259.5351275296019" />
-      <entry key="M15" value="384.84933558000307" />
-      <entry key="M30" value="650.6475629590501" />
-      <entry key="H1" value="929.2428796228266" />
-      <entry key="H2" value="1152.9646267543376" />
-      <entry key="H4" value="1299.5783762590092" />
-      <entry key="D1" value="1445.6985472881217" />
-      <entry key="W1" value="1473.3173810203716" />
-    </decayedCancelled>
-    <decayedSelected>
       <entry key="MS100" value="1.0" />
       <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.0" />
-      <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.0000000001031597" />
-      <entry key="S30" value="1.0004710641100447" />
-      <entry key="S60" value="1.023109421492323" />
-      <entry key="M2" value="1.1890086375379336" />
-      <entry key="M5" value="1.8438452651783748" />
-      <entry key="M10" value="2.532027885938789" />
-      <entry key="M15" value="2.9051828523724" />
-      <entry key="M30" value="3.488502970430998" />
-      <entry key="H1" value="4.141959889212681" />
-      <entry key="H2" value="4.802767087320217" />
-      <entry key="H4" value="5.308901330677937" />
-      <entry key="D1" value="5.868987837669323" />
-      <entry key="W1" value="5.980850141166552" />
+      <entry key="S2" value="1.0000000002964107" />
+      <entry key="S5" value="1.0004054862457035" />
+      <entry key="S10" value="1.0451033273304278" />
+      <entry key="S30" value="2.175144284592688" />
+      <entry key="S60" value="4.492724227740997" />
+      <entry key="M2" value="9.259766600402019" />
+      <entry key="M5" value="20.950686529593316" />
+      <entry key="M10" value="43.23017867902889" />
+      <entry key="M15" value="78.23823371533551" />
+      <entry key="M30" value="242.96839733380193" />
+      <entry key="H1" value="574.4649831175594" />
+      <entry key="H2" value="959.1945559934204" />
+      <entry key="H4" value="1266.2058506302471" />
+      <entry key="D1" value="1613.7208325518563" />
+      <entry key="W1" value="1683.9514549764" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="4.1196189438922676E-157" />
+      <entry key="S10" value="6.418425775758625E-79" />
+      <entry key="S30" value="8.626001071570445E-27" />
+      <entry key="S60" value="9.287627120047253E-14" />
+      <entry key="M2" value="3.048272297958895E-7" />
+      <entry key="M5" value="0.002625181938896113" />
+      <entry key="M10" value="0.07259872940862991" />
+      <entry key="M15" value="0.26119091919566056" />
+      <entry key="M30" value="1.0940697725545534" />
+      <entry key="H1" value="2.496355950867073" />
+      <entry key="H2" value="4.0229558673463295" />
+      <entry key="H4" value="5.245748014386843" />
+      <entry key="D1" value="6.659589705586025" />
+      <entry key="W1" value="6.95000918341458" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.2782782272366007" />
-      <entry key="MS500" value="1.8365533269954217" />
-      <entry key="S2" value="5.873455770127044" />
-      <entry key="S5" value="8.71961857800221" />
-      <entry key="S10" value="10.164858533582569" />
-      <entry key="S30" value="11.366507764369864" />
-      <entry key="S60" value="13.048761276853442" />
-      <entry key="M2" value="25.37963351632595" />
-      <entry key="M5" value="109.76574447160907" />
-      <entry key="M10" value="262.05442580593825" />
-      <entry key="M15" value="387.74356834271646" />
-      <entry key="M30" value="654.1283870323335" />
-      <entry key="H1" value="933.3798523781868" />
-      <entry key="H2" value="1157.7644010254812" />
-      <entry key="H4" value="1304.88560694112" />
-      <entry key="D1" value="1451.5672263959295" />
-      <entry key="W1" value="1479.298186218813" />
+      <entry key="MS100" value="0.7684375906440062" />
+      <entry key="MS500" value="0.9486843151404539" />
+      <entry key="S2" value="0.9869165461815561" />
+      <entry key="S5" value="0.9951510371037042" />
+      <entry key="S10" value="1.0424515709555844" />
+      <entry key="S30" value="2.1740721728572727" />
+      <entry key="S60" value="4.49197819366921" />
+      <entry key="M2" value="9.259177352655676" />
+      <entry key="M5" value="20.952820449804634" />
+      <entry key="M10" value="43.301903861768125" />
+      <entry key="M15" value="78.49794871219179" />
+      <entry key="M30" value="244.05974677215718" />
+      <entry key="H1" value="576.9581967403005" />
+      <entry key="H2" value="963.2149483071338" />
+      <entry key="H4" value="1271.449922185104" />
+      <entry key="D1" value="1620.3800678692342" />
+      <entry key="W1" value="1690.9014113548683" />
     </decayedShown>
   </component>
   <component name="ProblemsViewState">
@@ -115,6 +112,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.AIShop.executor": "Run",
     "Spring Boot.BackendApplication.executor": "Run",
     "codeWithMe.voiceChat.enabledByDefault": "false",
@@ -126,7 +124,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "reference.settingsdialog.project.grazie",
+    "settings.editor.selected.configurable": "com.intellij.mcpserver.settings.filter",
     "ts.external.directory.path": "/home/denac/AI-shop/frontend/node_modules/typescript/lib"
   }
 }]]></component>
