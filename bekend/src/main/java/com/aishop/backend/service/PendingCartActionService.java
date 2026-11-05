@@ -135,8 +135,17 @@ public class PendingCartActionService {
                 .toList();
     }
 
+    public boolean isPending(Long userId, String actionId) {
+        var action = actions.get(actionId);
+        return action != null && action.userId().equals(userId) && Instant.now().isBefore(action.expiresAt());
+    }
+    public synchronized void revoke(Long userId, String actionId) {
+        var action = actions.get(actionId);
+        if (action != null && action.userId().equals(userId)) actions.remove(actionId, action);
+    }
+
     // 2. Potvrda i izvrsavanje operacije
-    public ConfirmationResult confirm(
+    public synchronized ConfirmationResult confirm(
             Long userId,
             String actionId) {
 

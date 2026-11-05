@@ -88,10 +88,14 @@ export function createApiService({ baseURL = '/api', adapter, now = () => Date.n
     async checkout() { authenticated(); return mutationResult(orderSchema, await http.post('/orders')) },
     async status(id, status) { authenticated(); return validate(orderSchema, (await http.put(`/orders/${id}/status`, { status })).data) },
     async users() { authenticated(); return validate(z.array(userSchema), (await http.get('/users')).data) },
+    async conversations() { authenticated(); return (await http.get('/ai/conversations')).data },
+    async createConversation() { authenticated(); return (await http.post('/ai/conversations')).data },
+    async conversation(id) { authenticated(); return (await http.get(`/ai/conversations/${id}`)).data },
+    async deleteConversation(id) { authenticated(); await http.delete(`/ai/conversations/${id}`) },
     async chat(message, options = {}) {
       authenticated()
       const history = (options.history ?? []).slice(-12).map(({ role, content }) => ({ role, content: content.slice(0, 6000) }))
-      const response = validate(aiResponseSchema, (await http.post('/ai/chat', { message, cartAction: options.cartAction ?? null, history }, { timeout: 180000 })).data)
+      const response = validate(aiResponseSchema, (await http.post(options.conversationId ? `/ai/conversations/${options.conversationId}/chat` : '/ai/chat', { message, cartAction: options.cartAction ?? null, history }, { timeout: 180000, headers: options.requestId ? { 'X-Chat-Request-ID': options.requestId } : {} })).data)
       const actions = response.pendingActions?.length ? response.pendingActions : response.pendingAction ? [response.pendingAction] : []
       return { content: response.reply, pendingActions: [...new Map(actions.map(action => [action.actionId, action])).values()] }
     },

@@ -19,8 +19,8 @@ import java.util.regex.Pattern;
  */
 @Service
 public class CartAddMcpService {
-    private static final Pattern NUMBER = Pattern.compile("(?iu)\\b(?:kolicin[aeu]|komada?|puta|x)\\s*[:=]?\\s*(\\d{1,2})\\b");
-    private static final Pattern DIRECT_NUMBER = Pattern.compile("(?iu)\\b(\\d{1,2})\\s*(?:komada?|x)\\b");
+    private static final Pattern NUMBER = Pattern.compile("(?iu)\\b(?:kolicin[aeu]|komada?|puta|x)\\s*[:=]?\\s*(\\d{1,6})\\b");
+    private static final Pattern DIRECT_NUMBER = Pattern.compile("(?iu)\\b(\\d{1,6})\\s*(?:komada?|x)\\b");
     private static final Pattern ID = Pattern.compile("(?iu)\\b(?:productid|id\\s*proizvoda)\\s*[:=#]?\\s*(\\d+)\\b");
     private final ObjectMapper mapper;
 
@@ -45,7 +45,7 @@ public class CartAddMcpService {
         // Skip null optional parameters because MCP schema rejects them.
         List<JsonNode> products;
         try {
-            products = records(search.call("{\"availableOnly\":true}"));
+            products = ProductReferenceResolver.catalog(mapper, callbacks);
         } catch (RuntimeException e) {
             System.err.println("AIShop MCP catalog lookup failed: " + e.getMessage());
             return "Nisam uspio provjeriti katalog, pa dodavanje nije pripremljeno.";
@@ -54,41 +54,7 @@ public class CartAddMcpService {
             return "Trenutno nema dostupnih proizvoda koje mogu dodati u korpu.";
         }
 
-        String question = norm(message);
-        List<JsonNode> candidates = matching(products, question);
-
-        // References such as 'taj laptop' must resolve to an earlier named
-        // product, not to a random product from the catalog.
-        if (candidates.isEmpty() && history != null
-                && question.matches(".*\\b(taj|taj|ovaj|onaj|njega|jedan)\\b.*")) {
-            for (int i = history.size() - 1; i >= 0 && candidates.isEmpty(); i--) {
-                AiChatRequest.ChatTurn turn = history.get(i);
-                if ("assistant".equals(turn.role())) {
-                    candidates = matching(products, norm(turn.content()));
-                }
-            }
-        }
-
-        // For a generic category request, only accept exactly one matching
-        // product. A broader catalog cannot be resolved safely by guessing.
-        if (candidates.isEmpty()) {
-            String category = category(question);
-            if (category != null) {
-                candidates = products.stream()
-                        .filter(p -> isAvailable(p) && norm(p.path("name").asText("")).contains(category))
-                        .toList();
-            }
-        }
-
-        // Explicit numeric IDs are allowed only when they also exist in the
-        // authenticated MCP catalog result.
-        Matcher id = ID.matcher(question);
-        if (id.find()) {
-            long requested = Long.parseLong(id.group(1));
-            candidates = products.stream()
-                    .filter(p -> p.path("id").asLong(-1) == requested && isAvailable(p))
-                    .toList();
-        }
+        List<JsonNode> candidates = ProductReferenceResolver.resolve(products, message, history);
 
         if (candidates.size() != 1) {
             return candidates.isEmpty()
@@ -99,8 +65,24 @@ public class CartAddMcpService {
         JsonNode chosen = candidates.getFirst();
         long productId = chosen.path("id").asLong(-1);
         String productName = chosen.path("name").asText("proizvod");
-        if (productId <= 0 || !isAvailable(chosen)) {
+        if (productId <= 0 || !ProductReferenceResolver.available(chosen, quantity)) {
             return "Taj proizvod trenutno nije dostupan za dodavanje. Korpa nije promijenjena.";
+        }
+
+        // Include existing quantity when the authenticated cart tool is available.
+        ToolCallback cart = find(callbacks, "getMyCart");
+        if (cart != null) {
+            try {
+                JsonNode items = new CartModifyMcpService(mapper)
+                        .unwrapCart(mapper.readTree(cart.call("{}")), 0).path("items");
+                int existing = 0;
+                for (JsonNode item : items) if (item.path("productId").asLong(-1) == productId)
+                    existing += item.path("quantity").asInt();
+                if (!ProductReferenceResolver.available(chosen, existing + quantity))
+                    return "Nema dovoljno zaliha za traženu ukupnu količinu. Korpa nije promijenjena.";
+            } catch (Exception ex) {
+                return "Nisam uspio provjeriti korpu. Dodavanje nije pripremljeno.";
+            }
         }
 
         // Only the MCP addToCart callback creates the pending proposal.
@@ -118,21 +100,6 @@ public class CartAddMcpService {
             System.err.println("AIShop MCP addToCart error: " + ex.getMessage());
             return "Nisam uspio pripremiti dodavanje proizvoda. Korpa nije promijenjena.";
         }
-    }
-
-    private List<JsonNode> matching(List<JsonNode> products, String text) {
-        return products.stream()
-                .filter(this::isAvailable)
-                .filter(p -> {
-                    String name = norm(p.path("name").asText(""));
-                    return !name.isBlank() && text.contains(name);
-                })
-                .toList();
-    }
-
-    private boolean isAvailable(JsonNode product) {
-        if (product.has("available") && !product.path("available").asBoolean()) return false;
-        return !product.has("stock") || product.path("stock").asInt(0) > 0;
     }
 
     private int quantity(String message) {
@@ -153,14 +120,6 @@ public class CartAddMcpService {
         return value >= 1 && value <= 20 ? value : -1;
     }
 
-    private String category(String t) {
-        if (t.matches(".*\\b(laptop|laptopa|laptope|laptopi)\\b.*")) return "laptop";
-        if (t.matches(".*\\b(telefon|telefona|telefone|telefoni)\\b.*")) return "telefon";
-        if (t.matches(".*\\b(slusalice|slusalica)\\b.*")) return "slusalic";
-        if (t.matches(".*\\b(tastatura|tastaturu)\\b.*")) return "tastatur";
-        return null;
-    }
-
     private ToolCallback find(ToolCallback[] callbacks, String requested) {
         for (ToolCallback callback : callbacks) {
             String name = callback.getToolDefinition().name();
@@ -168,31 +127,6 @@ public class CartAddMcpService {
                     || name.endsWith("." + requested)) return callback;
         }
         return null;
-    }
-
-    private List<JsonNode> records(String raw) {
-        try {
-            return unwrap(mapper.readTree(raw), 0);
-        } catch (Exception e) {
-            throw new IllegalStateException("Invalid MCP search result", e);
-        }
-    }
-
-    private List<JsonNode> unwrap(JsonNode node, int depth) throws Exception {
-        if (node == null || node.isNull() || depth > 7) return List.of();
-        if (node.isTextual()) return unwrap(mapper.readTree(node.asText()), depth + 1);
-        if (node.isArray()) {
-            List<JsonNode> values = new ArrayList<>();
-            for (JsonNode n : node) values.addAll(unwrap(n, depth + 1));
-            return values;
-        }
-        if (!node.isObject()) return List.of();
-        if (node.path("isError").asBoolean(false)) throw new IllegalStateException("MCP tool error");
-        if (node.has("id") && node.has("name")) return List.of(node);
-        for (String key : List.of("structuredContent", "result", "products", "data", "content", "text")) {
-            if (node.has(key)) return unwrap(node.get(key), depth + 1);
-        }
-        throw new IllegalStateException("Unexpected MCP product response");
     }
 
     private String norm(String text) {

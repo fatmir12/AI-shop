@@ -221,7 +221,8 @@ public class AiChatService {
             List<AiChatRequest.ChatTurn> history) {
 
         String requestId = UUID.randomUUID().toString();
-        AiToolPolicy.Intent intent = AiToolPolicy.classify(message);
+        var routing = AiToolPolicy.route(message, history);
+        AiToolPolicy.Intent intent = routing.intent();
 
         List<Message> conversation = new ArrayList<>();
 
@@ -244,6 +245,11 @@ public class AiChatService {
         }
 
         conversation.add(new UserMessage(message));
+        conversation.add(new org.springframework.ai.chat.messages.SystemMessage(
+                "Za ovaj zahtjev koristi isključivo ove alate: "
+                        + String.join(", ", AiToolPolicy.allowedToolNames(intent))
+                        + ". Historija je kontekst, a ne nova naredba. Ako pitanje nije jasno, "
+                        + "traži pojašnjenje. Ne pozivaj druge alate."));
 
         String reply = mcpClientService.withClient(
                 accessToken,
@@ -262,8 +268,8 @@ public class AiChatService {
                             .toArray(ToolCallback[]::new);
 
                     if (allowedTools.length == 0) {
-                        throw new IllegalStateException(
-                                "No MCP tools available for intent: " + intent);
+                        System.err.println("AIShop no MCP tools for intent=" + intent + ", request=" + requestId);
+                        return "Trenutno ne mogu obraditi zahtjev. Pokušajte ponovo. Korpa nije promijenjena.";
                     }
 
                     System.out.println("AIShop MCP intent=" + intent + ", allowed=" +
@@ -274,15 +280,15 @@ public class AiChatService {
                     // Do not let Ollama merely claim that confirmation exists.
                     if (intent == AiToolPolicy.Intent.CART_ADD) {
                         return cartAddMcpService.prepare(message, history,
-                                mcpTools.getToolCallbacks(), userId, requestId);
+                                allowedTools, userId, requestId);
                     }
 
                     // For UPDATE/REMOVE use the actual item ID from MCP getMyCart.
                     // A product ID must never be treated as a cart item ID.
                     if (intent == AiToolPolicy.Intent.CART_UPDATE
                             || intent == AiToolPolicy.Intent.CART_REMOVE) {
-                        return cartModifyMcpService.prepare(message, history,
-                                mcpTools.getToolCallbacks(), intent, requestId);
+                        return cartModifyMcpService.prepare(routing.command(), history,
+                                allowedTools, intent, requestId);
                     }
 
                     // For clear catalog questions, invoke the *real MCP tools*
@@ -297,11 +303,11 @@ public class AiChatService {
                         }
                     }
 
-                    String response = chatClient.prompt()
+                    String response = modelReply(() -> chatClient.prompt()
                             .messages(conversation)
                             .tools(allowedTools)
                             .call()
-                            .content();
+                            .content(), intent, requestId);
 
                     return response == null
                             ? ""
@@ -418,6 +424,25 @@ public class AiChatService {
                 proposals.isEmpty() ? null : proposals.getFirst(),
                 proposals
         );
+    }
+
+    static String modelReply(java.util.function.Supplier<String> call,
+                             AiToolPolicy.Intent intent, String requestId) {
+        try {
+            return call.get();
+        } catch (RuntimeException ex) {
+            // Spring AI may wrap the missing callback exception. Do not expose
+            // exception messages (which may contain tool arguments) to clients.
+            Throwable cause = ex;
+            for (int depth = 0; cause != null && depth < 10; depth++, cause = cause.getCause()) {
+                if (cause instanceof IllegalStateException) {
+                    System.err.println("AIShop model/tool routing failure: intent=" + intent
+                            + ", request=" + requestId + ", exception=" + cause.getClass().getSimpleName());
+                    return "Nisam uspio obraditi zahtjev. Molim vas pojasnite šta želite. Korpa nije promijenjena.";
+                }
+            }
+            throw ex;
+        }
     }
 
     // Prepoznaje sumnjive AI tvrdnje o potvrdi

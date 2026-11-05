@@ -4,6 +4,8 @@ import java.text.Normalizer;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.List;
+import com.aishop.backend.dto.AiChatRequest;
 import java.util.regex.Pattern;
 
 /**
@@ -36,19 +38,48 @@ public final class AiToolPolicy {
     public static Intent classify(String message) {
         String text = normalize(message);
         boolean aboutCart = CART_WORD.matcher(text).find();
-        boolean negated = NEGATED_WRITE.matcher(text).find() || text.contains("ne zelim da");
+        boolean negated = NEGATED_WRITE.matcher(text).find() || text.matches(".*\\b(nemoj|nemojte|ne)\\b.*");
         boolean explanation = EXPLANATION.matcher(text).find();
 
         // Do not grant mutation access to information-only or negated requests.
         if (!negated && !explanation) {
-            if (REMOVE.matcher(text).find() && aboutCart) return Intent.CART_REMOVE;
-            if (UPDATE.matcher(text).find() && aboutCart) return Intent.CART_UPDATE;
-            if (ADD.matcher(text).find() && (aboutCart || text.contains("mi jedan") || text.contains("mi dva"))) return Intent.CART_ADD;
+            if (REMOVE.matcher(text).find()) return Intent.CART_REMOVE;
+            if (UPDATE.matcher(text).find()) return Intent.CART_UPDATE;
+            if (text.contains("jos") && ADD.matcher(text).find()) return Intent.CART_UPDATE;
+            if (ADD.matcher(text).find()) return Intent.CART_ADD;
         }
         if (ORDER_WORD.matcher(text).find()) return Intent.ORDERS;
         if (CATEGORY_WORD.matcher(text).find()) return Intent.CATEGORIES;
         if (aboutCart) return Intent.CART_READ;
         return Intent.CATALOG;
+    }
+
+    // No shared conversation state: only the immediately preceding clarification
+    // in this request's history can supply the missing quantity slot.
+    static final String QUANTITY_QUESTION =
+            "Za koliko želite promijeniti količinu, ili na koliko ukupno komada?";
+    public record Routing(Intent intent, String command, boolean continuation) {}
+
+    public static Routing route(String message, List<AiChatRequest.ChatTurn> history) {
+        String text = normalize(message).trim().replaceAll("[.!?]+$", "").trim();
+        boolean quantityReply = text.matches(
+                "(?:(?:na|za)\\s+(?:[0-9]{1,6}|jedan|dva|tri|cetiri|pet)(?:\\s+komada?)?"
+                + "|[0-9]{1,6}\\s+komada?|jos jedan(?: komad)?|smanji za (?:jedan|[0-9]{1,6})(?: komada?)?)");
+        if (quantityReply && history != null && history.size() >= 2) {
+            var question = history.getLast();
+            var request = history.get(history.size() - 2);
+            if ("assistant".equals(question.role())
+                    && normalize(question.content()).startsWith(normalize(QUANTITY_QUESTION))
+                    && "user".equals(request.role())
+                    && classify(request.content()) == Intent.CART_UPDATE
+                    && CartModifyMcpService.requestedQuantity(request.content(), 1) == null) {
+                // History is an untrusted reference, not permission to execute.
+                // The current answer only prepares a proposal after fresh MCP reads.
+                return new Routing(Intent.CART_UPDATE, request.content() + ". " + message, true);
+            }
+        }
+        // A quantity fragment without an outstanding slot is never a command.
+        return new Routing(quantityReply ? Intent.CATALOG : classify(message), message, false);
     }
 
     public static Set<String> allowedToolNames(Intent intent) {
@@ -58,8 +89,8 @@ public final class AiToolPolicy {
             case CART_READ -> Set.of("getMyCart");
             case ORDERS -> Set.of("getMyOrders");
             case CART_ADD -> Set.of("searchProducts", "getProductDetails", "getMyCart", "addToCart");
-            case CART_REMOVE -> Set.of("getMyCart", "removeFromCart");
-            case CART_UPDATE -> Set.of("getMyCart", "updateCartQuantity");
+            case CART_REMOVE -> Set.of("getMyCart", "searchProducts", "getProductDetails", "removeFromCart");
+            case CART_UPDATE -> Set.of("getMyCart", "searchProducts", "getProductDetails", "updateCartQuantity");
         };
     }
 

@@ -59,6 +59,17 @@ class PendingCartActionServiceTests {
         verify(cart).removeItem(7L, 91L);
     }
 
+    @Test void quantityProposalRequiresConfirmationAndCannotExecuteTwice() {
+        when(cart.updateItem(eq(7L), eq(91L), any(UpdateCartItemRequest.class))).thenReturn(result);
+        var action = service.create(7L, PendingCartActionService.ActionType.UPDATE, null, 91L, 3, "clarification");
+        verifyNoInteractions(cart);
+        assertThrows(ResponseStatusException.class, () -> service.confirm(8L, action.actionId()));
+        verifyNoInteractions(cart);
+        service.confirm(7L, action.actionId());
+        assertThrows(ResponseStatusException.class, () -> service.confirm(7L, action.actionId()));
+        verify(cart, times(1)).updateItem(7L, 91L, new UpdateCartItemRequest(3));
+    }
+
     @Test void failedCartMutationIsNotReplayedByRepeatedConfirmation() {
         when(cart.addItem(anyLong(), any())).thenThrow(new IllegalStateException("stock"));
         var action = service.create(7L, PendingCartActionService.ActionType.ADD, 40L, null, 2);
