@@ -87,6 +87,10 @@ public class AiChatService {
                     "Sta preporucujes do 2000 KM?"
                     "Koliko kostaju laptopi?"
 
+                    Za najjeftiniji koristi sortDirection ASC i limit 1;
+                    za najskuplji DESC i limit 1. Budžet šalji kao maxPrice,
+                    raspon kao minPrice/maxPrice, a dostupnost kao availableOnly true.
+                    Kategoriju prvo pronađi preko getCategories. Ne sortiraj nepotpun katalog.
                     Za ovakva pitanja koristi searchProducts.
                     NEMOJ umjesto njega koristiti getMyCart.
 
@@ -296,7 +300,7 @@ public class AiChatService {
                     // the small LLM to decide whether to call searchProducts.
                     if (intent == AiToolPolicy.Intent.CATALOG) {
                         String catalogAnswer = catalogMcpAnswerService.tryAnswer(
-                                message, mcpTools.getToolCallbacks());
+                                message, allowedTools);
                         if (catalogAnswer != null) {
                             System.out.println("AIShop MCP direct catalog lookup completed");
                             return catalogAnswer;

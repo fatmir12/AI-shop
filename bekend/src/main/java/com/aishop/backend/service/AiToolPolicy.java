@@ -84,7 +84,7 @@ public final class AiToolPolicy {
 
     public static Set<String> allowedToolNames(Intent intent) {
         return switch (intent) {
-            case CATALOG -> Set.of("searchProducts", "getProductDetails");
+            case CATALOG -> Set.of("searchProducts", "getProductDetails", "getCategories");
             case CATEGORIES -> Set.of("getCategories", "searchProducts");
             case CART_READ -> Set.of("getMyCart");
             case ORDERS -> Set.of("getMyOrders");

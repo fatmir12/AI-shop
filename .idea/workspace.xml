@@ -5,10 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="41d12d80-a72d-4ad4-99fb-b5f3e48dfe5f" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/data_sources_history.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/data_sources_history.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bekend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/mcp/ProductMcpTools.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/mcp/ProductMcpTools.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/AiChatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/AiChatService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/AiToolPolicy.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/AiToolPolicy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/CatalogMcpAnswerService.java" beforeDir="false" afterPath="$PROJECT_DIR$/bekend/src/main/java/com/aishop/backend/service/CatalogMcpAnswerService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -107,6 +110,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "JUnit.CatalogRoutingTests.singularMouseUsesCatalogTool.executor": "Debug",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -129,6 +133,22 @@
   }
 }]]></component>
   <component name="RunManager" selected="Spring Boot.AIShop">
+    <configuration name="CatalogRoutingTests.singularMouseUsesCatalogTool" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="backend" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.aishop.backend.service.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.aishop.backend.service" />
+      <option name="MAIN_CLASS_NAME" value="com.aishop.backend.service.CatalogRoutingTests" />
+      <option name="METHOD_NAME" value="singularMouseUsesCatalogTool" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="AIShop" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
       <option name="ALTERNATIVE_JRE_PATH" value="25" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -160,11 +180,13 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="JUnit.CatalogRoutingTests.singularMouseUsesCatalogTool" />
       <item itemvalue="Spring Boot.AIShop" />
       <item itemvalue="Spring Boot.BackendApplication" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.CatalogRoutingTests.singularMouseUsesCatalogTool" />
         <item itemvalue="Spring Boot.BackendApplication" />
       </list>
     </recent_temporary>

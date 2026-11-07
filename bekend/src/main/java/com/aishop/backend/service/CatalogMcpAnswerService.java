@@ -19,11 +19,6 @@ import java.util.regex.Pattern;
 @Service
 public class CatalogMcpAnswerService {
 
-    private static final Pattern MAX_PRICE = Pattern.compile(
-            "\\b(?:do|ispod|manje od|najvise|max(?:imalno)?)\\s*" +
-                    "([0-9][0-9., ]{0,14})\\s*(?:km|bam)?\\b"
-    );
-
     private final ObjectMapper mapper;
 
     public CatalogMcpAnswerService(ObjectMapper mapper) {
@@ -48,6 +43,11 @@ public class CatalogMcpAnswerService {
 
         String category = requestedCategory(normalized);
         BigDecimal maxPrice = parseMaxPrice(normalized);
+        BigDecimal minPrice = parsePrice(normalized.replace("manje od", "ispod"), "(?:od|iznad|min(?:imalno)?)");
+        boolean cheapest = normalized.contains("najjeftin");
+        boolean expensive = normalized.contains("najskuplj");
+        boolean descending = expensive || normalized.contains("desc")
+                || normalized.contains("opadaju") || normalized.contains("silazno");
 
         ToolCallback searchTool =
                 find(callbacks, "searchProducts");
@@ -85,7 +85,7 @@ public class CatalogMcpAnswerService {
                 String categoryName =
                         normalize(c.path("name").asText(""));
 
-                if (categoryName.contains(category)) {
+                if (category.equals(requestedCategory(categoryName))) {
                     categoryId = c.path("id").asLong();
                     break;
                 }
@@ -103,6 +103,9 @@ public class CatalogMcpAnswerService {
             args.put("maxPrice", maxPrice);
         }
 
+        if (minPrice != null) args.put("minPrice", minPrice);
+        args.put("sortDirection", descending ? "DESC" : "ASC");
+        args.put("limit", cheapest || expensive ? 1 : 20);
         args.put("availableOnly", true);
 
         System.out.println(
@@ -120,6 +123,9 @@ public class CatalogMcpAnswerService {
         );
 
         if (products.isEmpty()) {
+            if (minPrice != null) {
+                return "Trenutno nemamo dostupnih proizvoda u traženom cjenovnom rasponu.";
+            }
 
             if (category != null && maxPrice != null) {
                 return "Trenutno nemamo dostupnih proizvoda " +
@@ -144,7 +150,9 @@ public class CatalogMcpAnswerService {
         // Odgovor formiramo samo od MCP rezultata.
         StringBuilder answer = new StringBuilder();
 
-        if (products.size() == 1) {
+        if (cheapest || expensive) {
+            answer.append(cheapest ? "Najjeftiniji dostupni proizvod" : "Najskuplji dostupni proizvod");
+        } else if (products.size() == 1) {
             answer.append(
                     "Trenutno imamo sljedeci proizvod"
             );
@@ -154,6 +162,7 @@ public class CatalogMcpAnswerService {
             );
         }
 
+        if (minPrice != null) answer.append(" od ").append(money(minPrice)).append(" KM");
         if (maxPrice != null) {
             answer.append(" do ")
                     .append(money(maxPrice))
@@ -245,7 +254,7 @@ public class CatalogMcpAnswerService {
                         || text.contains("mobitel")
                         || text.contains("slusalic")
                         || text.contains("tastatur")
-                        || text.contains("misev")
+                        || requestedCategory(text) != null
                         || text.contains("racunar");
 
         boolean asking =
@@ -266,7 +275,10 @@ public class CatalogMcpAnswerService {
                         || text.contains("sta prodajete")
                         || text.contains("sta nudite")
                         || text.contains("do ")
-                        || text.contains("ispod ");
+                        || text.contains("ispod ")
+                        || text.contains("kupiti")
+                        || text.contains("najjeftin") || text.contains("najskuplj")
+                        || text.contains("sortir");
 
         return (catalogWords && asking)
                 || text.contains("sta imate u ponudi")
@@ -416,7 +428,7 @@ public class CatalogMcpAnswerService {
         }
 
         if (text.matches(
-                ".*\\b(mis|misevi|misa)\\b.*"
+                ".*\\b(mis|misevi|misa|miseve|miseva|misu|misem|misevima)\\b.*"
         )) {
             return "mis";
         }
@@ -426,7 +438,11 @@ public class CatalogMcpAnswerService {
 
     private static BigDecimal parseMaxPrice(String text) {
 
-        Matcher match = MAX_PRICE.matcher(text);
+        return parsePrice(text, "(?:do|za|imam|budzet(?: je)?|ispod|manje od|najvise|max(?:imalno)?)");
+    }
+
+    private static BigDecimal parsePrice(String text, String prefix) {
+        Matcher match = Pattern.compile("\\b" + prefix + "\\s*([0-9][0-9., ]{0,14})").matcher(text);
 
         if (!match.find()) {
             return null;
