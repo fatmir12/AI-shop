@@ -45,7 +45,8 @@ public class ProductMcpTools {
                     Do not convert currencies.
 
                     Returns up to 20 matching products
-                    sorted by price ascending.
+                    sorted by price (sortDirection ASC by default, or DESC).
+                    limit - maximum results (1 to 20); use 1 for cheapest/most expensive.
 
                     Use this tool for customer questions
                     about products, prices and availability.
@@ -82,7 +83,13 @@ public class ProductMcpTools {
                     description = "True to show only products in stock",
                     required = false
             )
-            Boolean availableOnly) {
+            Boolean availableOnly,
+
+            @McpToolParam(description = "Price sort direction: ASC or DESC", required = false)
+            String sortDirection,
+
+            @McpToolParam(description = "Maximum results, 1 to 20 (default 20)", required = false)
+            Integer limit) {
 
         System.out.println(
                 "MCP searchProducts called: "
@@ -132,11 +139,12 @@ public class ProductMcpTools {
                 availableOnly
         );
 
-        var page = PageRequest.of(
-                0,
-                20,
-                Sort.by(Sort.Direction.ASC, "price")
-        );
+        Sort.Direction direction = sortDirection == null ? Sort.Direction.ASC
+                : Sort.Direction.fromString(sortDirection);
+        int size = limit == null ? 20 : limit;
+        if (size < 1 || size > 20) throw new IllegalArgumentException("Limit must be 1 to 20");
+        var page = PageRequest.of(0, size,
+                Sort.by(direction, "price").and(Sort.by("id")));
 
         List<ProductSearchResult> results =
                 productRepository.findAll(specification, page)
@@ -150,6 +158,11 @@ public class ProductMcpTools {
         );
 
         return results;
+    }
+
+    public List<ProductSearchResult> searchProducts(String keyword, BigDecimal minPrice,
+            BigDecimal maxPrice, Long categoryId, Boolean availableOnly) {
+        return searchProducts(keyword, minPrice, maxPrice, categoryId, availableOnly, null, null);
     }
 
     // Kompatibilnost sa starim lokalnim AiCatalogTools
