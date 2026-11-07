@@ -92,7 +92,7 @@ public class CatalogMcpAnswerService {
             }
 
             if (categoryId == null || categoryId <= 0) {
-                return "Trenutno nemamo trazenu " +
+                return "Trenutno nemamo traženu " +
                         "kategoriju u katalogu.";
             }
 
@@ -129,13 +129,13 @@ public class CatalogMcpAnswerService {
 
             if (category != null && maxPrice != null) {
                 return "Trenutno nemamo dostupnih proizvoda " +
-                        "u trazenoj kategoriji do " +
+                        "u traženoj kategoriji do " +
                         money(maxPrice) + " KM.";
             }
 
             if (category != null) {
                 return "Trenutno nemamo dostupnih proizvoda " +
-                        "u trazenoj kategoriji.";
+                        "u traženoj kategoriji.";
             }
 
             if (maxPrice != null) {
@@ -151,14 +151,14 @@ public class CatalogMcpAnswerService {
         StringBuilder answer = new StringBuilder();
 
         if (cheapest || expensive) {
-            answer.append(cheapest ? "Najjeftiniji dostupni proizvod" : "Najskuplji dostupni proizvod");
+            answer.append(cheapest ? "Najpovoljniji dostupni proizvod" : "Najskuplji dostupni proizvod");
         } else if (products.size() == 1) {
             answer.append(
-                    "Trenutno imamo sljedeci proizvod"
+                    "Trenutno imamo sljedeći proizvod"
             );
         } else {
             answer.append(
-                    "Trenutno imamo sljedece proizvode"
+                    "Trenutno imamo sljedeće proizvode"
             );
         }
 
@@ -212,26 +212,26 @@ public class CatalogMcpAnswerService {
 
             count++;
 
-            answer.append("\n")
-                    .append(count)
-                    .append(". ")
-                    .append(name)
-                    .append(" — ")
-                    .append(money(price))
-                    .append(" KM")
-                    .append(" (ID: ")
-                    .append(id)
-                    .append(")");
+            if (cheapest || expensive) {
+                answer = new StringBuilder(cheapest ? "Najpovoljniji" : "Najskuplji");
+                String noun = "mis".equals(category) ? "miš" : "laptop".equals(category) ? "laptop"
+                        : "telefon".equals(category) ? "telefon" : "dostupni proizvod";
+                answer.append(" ").append(noun).append(" u našoj ponudi je ")
+                        .append(name).append(", po cijeni od ").append(money(price)).append(" KM.");
+                return answer.toString();
+            }
+            answer.append("\n").append(count).append(". ").append(name)
+                    .append(" — ").append(money(price)).append(" KM");
         }
 
         if (products.size() == 1) {
             answer.append(
-                    "\n\nZelite li vise informacija " +
+                    "\n\nŽelite li više informacija " +
                             "o ovom proizvodu?"
             );
         } else {
             answer.append(
-                    "\n\nZelite li vise informacija " +
+                    "\n\nŽelite li više informacija " +
                             "o nekom od ovih proizvoda?"
             );
         }

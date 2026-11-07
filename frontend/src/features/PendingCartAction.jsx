@@ -25,7 +25,7 @@ export default function PendingCartAction({ action, update }) {
   }
   return <section className="pending-action" aria-label={t('Prijedlog promjene korpe')}>
     <strong>{t(labels[action.type])}</strong>
-    <div>{product?.productName ?? (action.productId ? `${t('Proizvod')} #${action.productId}` : `${t('Stavka korpe')} #${action.itemId}`)}{action.quantity != null && ` · ${t('Količina')}: ${action.quantity}`}</div>
+    <div>{product?.productName ?? (action.productId ? t('Odabrani proizvod') : t('Odabrana stavka korpe'))}{action.quantity != null && ` · ${t('Količina')}: ${action.quantity}`}</div>
     {status === 'PENDING' && <><small>{t('Korpa još nije promijenjena. Potvrdite samo ako želite izvršiti ovu radnju.')}</small><div className="pending-actions"><button className="btn" onClick={() => void confirm()}>{t('Potvrdi')}</button><button className="btn secondary" onClick={() => update({ uiStatus: 'CANCELLED' })}>{t('Odustani')}</button></div></>}
     {status === 'CONFIRMING' && <span role="status">{t('Potvrđivanje je u toku. Ako je stranica osvježena, provjerite korpu prije novog prijedloga.')}</span>}
     {status === 'COMPLETED' && <span role="status">{t('Promjena korpe je izvršena.')}</span>}

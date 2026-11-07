@@ -46,7 +46,7 @@ public class CartModifyMcpService {
         ToolCallback mutation = find(callbacks,
                 intent == AiToolPolicy.Intent.CART_UPDATE ? "updateCartQuantity" : "removeFromCart");
         if (getCart == null || mutation == null) {
-            return "MCP alati za korpu trenutno nisu dostupni. Korpa nije promijenjena.";
+            return "Upravljanje korpom trenutno nije dostupno. Korpa nije promijenjena.";
         }
 
         Integer quantity = null;
@@ -85,7 +85,7 @@ public class CartModifyMcpService {
             JsonNode chosen = matches.getFirst();
             long itemId = chosen.path("id").asLong(-1);
             if (itemId <= 0 || chosen.path("productName").asText("").isBlank()) {
-                return "MCP nije vratio ispravan ID stavke korpe. Korpa nije promijenjena.";
+                return "Nisam uspio pouzdano prepoznati stavku korpe. Korpa nije promijenjena.";
             }
 
             if (intent == AiToolPolicy.Intent.CART_UPDATE) {
@@ -114,7 +114,7 @@ public class CartModifyMcpService {
                     + " iz korpe. Potrebna je potvrda radnje.";
         } catch (Exception ex) {
             System.err.println("AIShop MCP cart modification error: " + ex.getMessage());
-            return "Nisam uspio pripremiti promjenu korpe preko MCP-a. "
+            return "Nisam uspio pripremiti promjenu korpe. "
                     + "Korpa nije promijenjena.";
         }
     }

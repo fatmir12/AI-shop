@@ -8,7 +8,6 @@ import { Home, Catalog, ProductDetails } from './features/products';
 import { AuthPage, Protected, RequireApiUser } from './features/auth';
 import { Account, Checkout } from './features/account';
 import { CartPage } from './features/cart';
-import { Assistant } from './features/assistant';
 const AdminProducts = lazy(() => import('./features/admin').then(module => ({
   default: module.AdminProducts
 })));
@@ -25,7 +24,6 @@ const Dashboard = lazy(() => import('./features/admin').then(module => ({
   default: module.Dashboard
 })));
 import { Missing, Loading } from './components/ui';
-import { useApp } from './app/context';
 function Scroll() {
   const {
     pathname, hash
@@ -46,12 +44,6 @@ function ProductRoute() {
   } = useParams();
   return <ProductDetails key={id} />;
 }
-function ChatRoute() {
-  const {
-    user
-  } = useApp();
-  return <Assistant key={user?.id ?? 'guest'} />;
-}
 export default function App() {
-  return <BrowserRouter><Providers><ResumeCartIntent /><Scroll /><MotionEffects /><Suspense fallback={<div className="container page"><Loading /></div>}><Routes><Route element={<StoreLayout />}><Route index element={<Home />} /><Route path="products" element={<Catalog />} /><Route path="products/:id" element={<ProductRoute />} /><Route element={<RequireApiUser />}><Route path="cart" element={<CartPage />} /><Route path="assistant" element={<ChatRoute />} /></Route><Route path="login" element={<AuthPage />} /><Route path="register" element={<AuthPage register />} /><Route path="forgot-password" element={<AuthPage forgot />} /><Route element={<Protected role="USER" />}><Route path="checkout" element={<Checkout />} /><Route path="account" element={<Account />} /><Route path="account/orders" element={<Account ordersOnly />} /><Route path="account/orders/:id" element={<Account ordersOnly />} /></Route><Route path="unauthorized" element={<Missing unauthorized />} /><Route path="*" element={<Missing />} /></Route><Route element={<Protected role="ADMIN" />}><Route path="admin" element={<AdminLayout />}><Route index element={<Dashboard />} /><Route path="products" element={<AdminProducts />} /><Route path="categories" element={<AdminCategories />} /><Route path="orders" element={<AdminOrders />} /><Route path="users" element={<AdminUsers />} /><Route path="*" element={<Missing />} /></Route></Route></Routes></Suspense></Providers></BrowserRouter>;
+  return <BrowserRouter><Providers><ResumeCartIntent /><Scroll /><MotionEffects /><Suspense fallback={<div className="container page"><Loading /></div>}><Routes><Route element={<StoreLayout />}><Route index element={<Home />} /><Route path="products" element={<Catalog />} /><Route path="products/:id" element={<ProductRoute />} /><Route element={<RequireApiUser />}><Route path="cart" element={<CartPage />} /><Route path="assistant" element={null} /></Route><Route path="login" element={<AuthPage />} /><Route path="register" element={<AuthPage register />} /><Route path="forgot-password" element={<AuthPage forgot />} /><Route element={<Protected role="USER" />}><Route path="checkout" element={<Checkout />} /><Route path="account" element={<Account />} /><Route path="account/orders" element={<Account ordersOnly />} /><Route path="account/orders/:id" element={<Account ordersOnly />} /></Route><Route path="unauthorized" element={<Missing unauthorized />} /><Route path="*" element={<Missing />} /></Route><Route element={<Protected role="ADMIN" />}><Route path="admin" element={<AdminLayout />}><Route index element={<Dashboard />} /><Route path="products" element={<AdminProducts />} /><Route path="categories" element={<AdminCategories />} /><Route path="orders" element={<AdminOrders />} /><Route path="users" element={<AdminUsers />} /><Route path="*" element={<Missing />} /></Route></Route></Routes></Suspense></Providers></BrowserRouter>;
 }

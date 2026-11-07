@@ -33,7 +33,7 @@ public class CartAddMcpService {
         ToolCallback search = find(callbacks, "searchProducts");
         ToolCallback add = find(callbacks, "addToCart");
         if (search == null || add == null) {
-            return "Trenutno ne mogu pripremiti dodavanje u korpu jer MCP alati nisu dostupni.";
+            return "Trenutno ne mogu pripremiti dodavanje u korpu. Pokušajte ponovo.";
         }
 
         int quantity = quantity(message);
@@ -58,8 +58,8 @@ public class CartAddMcpService {
 
         if (candidates.size() != 1) {
             return candidates.isEmpty()
-                    ? "Nisam mogao pouzdano pronaći taj proizvod u katalogu. Napišite njegov puni naziv ili ID. Korpa nije promijenjena."
-                    : "Pronašao sam više mogućih proizvoda. Navedite puni naziv ili ID proizvoda koji želite dodati. Korpa nije promijenjena.";
+                    ? "Nisam mogao pouzdano pronaći taj proizvod u katalogu. Napišite njegov puni naziv. Korpa nije promijenjena."
+                    : "Pronašao sam više mogućih proizvoda. Navedite puni naziv proizvoda koji želite dodati. Korpa nije promijenjena.";
         }
 
         JsonNode chosen = candidates.getFirst();

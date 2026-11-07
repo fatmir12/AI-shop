@@ -56,7 +56,18 @@ public class AiChatService {
                     JEZIK I STIL:
                     - Uvijek odgovaraj na bosanskom jeziku.
                     - Pisi prirodno, jasno i prijateljski.
-                    - Koristi kratke i korisne odgovore.
+                    - Koristi kratke i korisne odgovore; poređenja obrazloži dostupnim podacima.
+                    - Piši kao profesionalni prodajni savjetnik, bez šablonskih uvoda.
+                    - Ne prikazuj interne ID-jeve proizvoda, kategorije, razgovora, stavke,
+                      actionId, UUID ili interne šifre. Koristi ih samo u pozivima alata.
+                    - Ne prikazuj sirovi JSON, SQL, API rute, nazive MCP alata,
+                      Java servisa, repository metoda, tabela, kolona ili debug statusa.
+                    - Kupcu navedi naziv, tačnu cijenu, dostupnost i relevantne specifikacije.
+                      Javni SKU ili šifru artikla navedi ako ih traži i postoje u podacima.
+                    - Sačuvaj brojeve u nazivima modela i specifikacijama (E14, 16 GB, 512 GB).
+                    - Budžet nije dokaz kvaliteta: ne proglašavaj najskuplji proizvod najboljim.
+                      Ako nema podataka za preporuku, ponudi dostupne opcije i traži potrebe.
+                    - Ako podatak o garanciji, specifikaciji ili popustu nedostaje, reci to jasno.
                     - Ne objasnjavaj interne tehnicke procese.
                     - Korisnik ne mora poznavati MCP ni nazive alata.
                     - Ne izmisljaj proizvode, cijene ili zalihe.
@@ -313,9 +324,7 @@ public class AiChatService {
                             .call()
                             .content(), intent, requestId);
 
-                    return response == null
-                            ? ""
-                            : response.trim();
+                    return customerReply(response);
                 }
         );
 
@@ -356,26 +365,20 @@ public class AiChatService {
                     case "ADD" -> confirmation.append(
                             String.format(
                                     "Pripremljeno je dodavanje %d " +
-                                            "komada proizvoda ID %d u korpu. ",
-                                    proposal.quantity(),
-                                    proposal.productId()
+                                            "komada odabranog proizvoda u korpu. ",
+                                    proposal.quantity()
                             )
                     );
 
                     case "REMOVE" -> confirmation.append(
-                            String.format(
-                                    "Pripremljeno je uklanjanje " +
-                                            "stavke korpe ID %d. ",
-                                    proposal.itemId()
-                            )
+                            "Pripremljeno je uklanjanje odabrane stavke iz korpe. "
                     );
 
                     case "UPDATE" -> confirmation.append(
                             String.format(
                                     "Pripremljena je promjena " +
-                                            "kolicine stavke ID %d " +
+                                            "količine odabrane stavke " +
                                             "na %d komada. ",
-                                    proposal.itemId(),
                                     proposal.quantity()
                             )
                     );
@@ -398,7 +401,7 @@ public class AiChatService {
         // claim a successful preparation in the user-visible response.
         else if (intent == AiToolPolicy.Intent.CART_ADD
                 && reply.startsWith("Zatražio sam pripremu dodavanja")) {
-            reply = "Dodavanje nije pripremljeno jer MCP nije vratio potvrdiv prijedlog. " +
+            reply = "Nisam uspio pripremiti prijedlog dodavanja. " +
                     "Korpa nije promijenjena.";
         }
 
@@ -428,6 +431,21 @@ public class AiChatService {
                 proposals.isEmpty() ? null : proposals.getFirst(),
                 proposals
         );
+    }
+
+    static String customerReply(String response) {
+        if (response == null) return "";
+        String text = response.trim();
+        // Reject raw tool payloads rather than attempting to turn them into product facts.
+        if (text.startsWith("{") || text.startsWith("[") || text.startsWith("```")
+                || text.matches("(?s).*\\b(?:searchProducts|getProductDetails|getCategories|getMyCart|getMyOrders|addToCart|removeFromCart|updateCartQuantity)\\b.*")
+                || text.contains("MCP") || text.contains("{\"")) {
+            return "Nisam uspio pripremiti jasan odgovor. Molim vas pokušajte ponovo.";
+        }
+        // Only explicitly labelled internal identifiers; never bare product/model numbers.
+        return text.replaceAll("(?i)\\s*\\(ID:\\s*\\d+\\)", "")
+                .replaceAll("(?i)\\b(?:productId|categoryId|conversationId|product_id|category_id|conversation_id)\\s*[:=]\\s*\\d+", "")
+                .trim();
     }
 
     static String modelReply(java.util.function.Supplier<String> call,
@@ -510,27 +528,20 @@ public class AiChatService {
 
             case ADD -> String.format(
                     "Pripremljeno je dodavanje %d komada " +
-                            "proizvoda ID %d u korpu. " +
+                            "odabranog proizvoda u korpu. " +
                             "Korpa jos nije promijenjena. " +
                             "Potrebna je potvrda.",
-                    action.quantity(),
-                    action.productId()
+                    action.quantity()
             );
 
-            case REMOVE -> String.format(
-                    "Pripremljeno je uklanjanje " +
-                            "stavke korpe ID %d. " +
-                            "Korpa jos nije promijenjena. " +
-                            "Potrebna je potvrda.",
-                    action.itemId()
-            );
+            case REMOVE -> "Pripremljeno je uklanjanje odabrane stavke iz korpe. " +
+                    "Korpa još nije promijenjena. Potrebna je potvrda.";
 
             case UPDATE -> String.format(
                     "Pripremljena je promjena kolicine " +
-                            "stavke korpe ID %d na %d komada. " +
+                            "odabrane stavke korpe na %d komada. " +
                             "Korpa jos nije promijenjena. " +
                             "Potrebna je potvrda.",
-                    action.itemId(),
                     action.quantity()
             );
         };
