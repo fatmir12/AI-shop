@@ -1,6 +1,7 @@
 import { http } from './adapters/api';
 
 export const PaymentService = {
+  sessionStatus: async (sessionId) => (await http.get('/checkout/session-status', { params: { sessionId } })).data,
   createCheckoutSession: async (orderId) => {
     try {
       const response = await http.post(

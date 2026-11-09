@@ -48,6 +48,8 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        .requestMatchers(HttpMethod.POST, "/api/checkout/webhook").permitAll()
+
                         // Health endpoint
                         .requestMatchers("/api/health")
                         .permitAll()

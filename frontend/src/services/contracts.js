@@ -71,6 +71,7 @@ export const orderSchema = z.object({
   totalAmount: z.number().nonnegative(),
   createdAt: z.string(),
   items: z.array(cartItemSchema),
+  paymentStatus: z.enum(['UNPAID', 'PAID']).optional(),
   shipping: shippingSchema.optional()
 });
 export const authSchema = z.object({

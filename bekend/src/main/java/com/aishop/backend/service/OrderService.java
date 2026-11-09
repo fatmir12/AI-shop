@@ -181,7 +181,7 @@ public class OrderService {
             Long orderId,
             UpdateOrderStatusRequest request) {
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findForPayment(orderId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Order not found"
@@ -195,6 +195,11 @@ public class OrderService {
                     HttpStatus.BAD_REQUEST,
                     "Invalid order status transition"
             );
+        }
+
+        if (newStatus == OrderStatus.CANCELLED && order.getStripeSessionId() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Narudžba ima pokrenuto plaćanje. Prvo zatvorite Stripe sesiju ili obradite povrat novca.");
         }
 
         // Vracanje zaliha ako je narudzba otkazana
@@ -262,7 +267,8 @@ public class OrderService {
                 order.getStatus().name(),
                 order.getTotalAmount(),
                 order.getCreatedAt(),
-                items
+                items,
+                order.getPaymentStatus()
         );
     }
 

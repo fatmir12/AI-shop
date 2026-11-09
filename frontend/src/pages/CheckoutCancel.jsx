@@ -1,17 +1,13 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
-export const CheckoutCancel = () => {
-  return (
-    <div className="checkout-cancel-container">
-      <div className="cancel-card">
-        <h1>✗ Payment Cancelled</h1>
-        <p>Your payment was cancelled. Please try again.</p>
-        <Link to="/cart" className="return-cart-button">
-          Return to Cart
-        </Link>
-      </div>
-    </div>
-  );
-};
-
-export default CheckoutCancel;
+export default function CheckoutCancel() {
+  const [params] = useSearchParams();
+  const orderId = params.get('orderId');
+  const valid = /^\d+$/.test(orderId || '');
+  return <div className="container page confirmation"><section className="panel">
+    <h1>Plaćanje nije završeno</h1>
+    <p>Narudžba je sačuvana. Povratak sa Stripea ne otkazuje narudžbu niti potvrđuje naplatu. Status i nastavak plaćanja dostupni su u njenim detaljima.</p>
+    <Link className="btn" to={valid ? `/account/orders/${orderId}` : '/account/orders'}>Moje narudžbe</Link>
+    <Link to="/products">Nastavi kupovinu</Link>
+  </section></div>;
+}

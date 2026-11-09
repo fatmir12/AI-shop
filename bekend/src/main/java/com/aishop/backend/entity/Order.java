@@ -32,6 +32,17 @@ public class Order {
     @Column(name = "status", nullable = false, length = 20)
     private OrderStatus status;
 
+    @Column(name = "payment_status", nullable = false, length = 20)
+    private String paymentStatus = "UNPAID";
+    @Column(name = "stripe_session_id", length = 255)
+    private String stripeSessionId;
+    @Column(name = "payment_amount_minor")
+    private Long paymentAmountMinor;
+    @Column(name = "payment_currency", length = 3)
+    private String paymentCurrency;
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
     @Column(name = "created_at", nullable = false,
             insertable = false, updatable = false)
     private LocalDateTime createdAt;
