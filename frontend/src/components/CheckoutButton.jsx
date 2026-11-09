@@ -14,10 +14,10 @@ export const CheckoutButton = ({ orderId, disabled = false }) => {
       if (session && session.sessionUrl) {
         PaymentService.redirectToCheckout(session.sessionUrl);
       } else {
-        setError('Failed to create checkout session');
+        setError('Plaćanje se nije otvorilo. Pokušajte ponovo ili provjerite narudžbu.');
       }
     } catch (err) {
-      setError(err.message || 'An error occurred during checkout');
+      setError(err.message || 'Plaćanje trenutno nije dostupno. Pokušajte ponovo.');
       console.error('Checkout error:', err);
     } finally {
       setLoading(false);
@@ -27,13 +27,14 @@ export const CheckoutButton = ({ orderId, disabled = false }) => {
   return (
     <div className="checkout-button-container">
       <button
+        type="button"
         onClick={handleCheckout}
         disabled={disabled || loading}
         className="checkout-button"
       >
-        {loading ? 'Processing...' : 'Proceed to Payment'}
+        {loading ? 'Otvaranje plaćanja…' : 'Nastavi na plaćanje'}
       </button>
-      {error && <p className="error-message">{error}</p>}
+      {error && <p className="error-message" role="alert">{error}</p>}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-export const money = value => `${new Intl.NumberFormat('bs-BA', {
+export const money = value => `${new Intl.NumberFormat('de-DE', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2
 }).format(value)} KM`;

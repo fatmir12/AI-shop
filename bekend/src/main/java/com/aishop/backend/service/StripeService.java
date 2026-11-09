@@ -24,7 +24,6 @@ public class StripeService {
 
 		List<SessionCreateParams.LineItem> lineItems = new ArrayList<>();
 
-		// Ako orderResponse ima items - koristi ih
 		if (orderResponse.items() != null && !orderResponse.items().isEmpty()) {
 			orderResponse.items().forEach(item -> {
 				lineItems.add(
@@ -45,7 +44,6 @@ public class StripeService {
 				);
 			});
 		} else {
-			// Ako nema items, kreiraj jedan item sa total amount
 			lineItems.add(
 				SessionCreateParams.LineItem.builder()
 					.setPriceData(

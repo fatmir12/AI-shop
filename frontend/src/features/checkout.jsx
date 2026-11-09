@@ -131,12 +131,3 @@ export function CheckoutPage() {
 }
 
 export default CheckoutPage;
-STRIPE_API_KEY=sk_test_... (test ključ sa Stripe-a)
-DB_USERNAME=your_sql_login
-DB_PASSWORD=your_password
-JWT_SECRET=base64_encoded_secret
-OLLAMA_MODEL=model_nameSTRIPE_API_KEY=sk_test_... (test ključ sa Stripe-a)
-DB_USERNAME=your_sql_login
-DB_PASSWORD=your_password
-JWT_SECRET=base64_encoded_secret
-OLLAMA_MODEL=model_name

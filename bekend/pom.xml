@@ -122,7 +122,6 @@
 			<artifactId>spring-ai-starter-model-ollama</artifactId>
 		</dependency>
 
-		<!-- Stripe Payment Processing -->
 		<dependency>
 			<groupId>com.stripe</groupId>
 			<artifactId>stripe-java</artifactId>

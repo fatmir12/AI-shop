@@ -1,9 +1,9 @@
-import { apiClient } from './api';
+import { http } from './adapters/api';
 
 export const PaymentService = {
   createCheckoutSession: async (orderId) => {
     try {
-      const response = await apiClient.post(
+      const response = await http.post(
         `/checkout/create-session?orderId=${orderId}`
       );
       return response.data;
