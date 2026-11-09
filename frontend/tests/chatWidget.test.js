@@ -13,7 +13,7 @@ test('storefront hosts one persistent assistant outside the route outlet', async
   const layout = await readFile(new URL('../src/components/Layout.jsx', import.meta.url), 'utf8')
   const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8')
   assert.equal((layout.match(/<Assistant\s*\/>/g) ?? []).length, 1)
-  assert.match(layout, /<main><Assistant \/><Outlet \/><\/main>/)
+  assert.match(layout, /<main(?:\s[^>]*)?><Assistant \/><Outlet \/><\/main>/)
   assert.doesNotMatch(layout, /AIAssistantBar/)
   assert.match(app, /path="assistant" element=\{null\}/)
   assert.doesNotMatch(app, /<Assistant|<ChatRoute/)

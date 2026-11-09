@@ -48,6 +48,9 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        .requestMatchers(HttpMethod.POST, "/api/checkout/webhook").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/checkout/refund").hasRole("ADMIN")
+
                         // Health endpoint
                         .requestMatchers("/api/health")
                         .permitAll()

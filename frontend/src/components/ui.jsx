@@ -1,7 +1,7 @@
 import { motion } from '../utils/motion.js';
 import { statusLabel } from '../i18n/bs.js';
 import { t } from "../i18n/bs.js";
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { AlertCircle, PackageOpen, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 export function Field({
@@ -32,6 +32,7 @@ export function Modal({
   close
 }) {
   const ref = useRef(null);
+  const headingId = useId();
   const dismissing = useRef(false);
   useEffect(() => {
     const dialog = ref.current;
@@ -46,19 +47,28 @@ export function Modal({
     const animation = dialog.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }], { duration: motion.modalExit, easing: motion.exitEasing });
     animation.finished.then(() => { if (dialog.isConnected) close(); }).catch(() => {}).finally(() => { dismissing.current = false; });
   };
-  return <dialog ref={ref} onCancel={event => { event.preventDefault(); dismiss(); }} onClick={e => {
+  return <dialog ref={ref} aria-labelledby={headingId} onCancel={event => { event.preventDefault(); dismiss(); }} onClick={e => {
     if (e.target === e.currentTarget) dismiss();
-  }}><div className="modal-header"><h2>{title}</h2><button className="icon-btn" onClick={dismiss} aria-label={t("Close dialog")}><X /></button></div>{children}</dialog>;
+  }}><div className="modal-header"><h2 id={headingId}>{title}</h2><button className="icon-btn" onClick={dismiss} aria-label={t("Close dialog")}><X /></button></div>{children}</dialog>;
 }
 export function Image({
+  fallbackSrc = '/product-fallback.svg',
   src,
   alt,
-  className = ''
+  className = '',
+  loading = 'lazy',
+  fetchPriority,
+  ...props
 }) {
-  return <img className={className} src={src || '/product-fallback.svg'} alt={alt} loading="lazy" onError={e => {
+  return <img {...props} className={className} src={src || fallbackSrc} alt={alt} loading={loading} fetchPriority={fetchPriority} decoding="async" onError={e => {
     e.currentTarget.onerror = null;
-    e.currentTarget.src = '/product-fallback.svg';
+    e.currentTarget.src = fallbackSrc;
+    e.currentTarget.alt = 'Ilustrativni prikaz: ' + alt;
   }} />;
+}
+export function PhotoNote({ src }) {
+  return /^https?:\/\/images\.unsplash\.com\//i.test(src ?? '')
+    ? <span className="photo-note">Ilustrativna fotografija</span> : null;
 }
 export function Status({
   status

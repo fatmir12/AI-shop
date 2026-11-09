@@ -45,7 +45,7 @@ public class OrderService {
 
     // Kreiranje narudzbe iz korpe
     @Transactional
-    public OrderResponse createOrder(Long userId) {
+    public OrderResponse createOrder(Long userId, ShippingDetails shipping) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -71,6 +71,8 @@ public class OrderService {
 
         Order order = new Order();
         order.setUser(user);
+        order.setShipping(new ShippingAddress(shipping.firstName(), shipping.lastName(), shipping.email(),
+                shipping.address(), shipping.city(), shipping.postalCode(), shipping.phone()));
         order.setStatus(OrderStatus.PENDING);
         order.setTotalAmount(BigDecimal.ZERO);
 
@@ -181,12 +183,15 @@ public class OrderService {
             Long orderId,
             UpdateOrderStatusRequest request) {
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findForPayment(orderId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Order not found"
                 ));
 
+        if ("PENDING".equals(order.getRefundStatus()) || "REFUNDED".equals(order.getPaymentStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Narudžba ima povrat novca i ne može se dalje obrađivati.");
+        }
         OrderStatus currentStatus = order.getStatus();
         OrderStatus newStatus = request.status();
 
@@ -195,6 +200,11 @@ public class OrderService {
                     HttpStatus.BAD_REQUEST,
                     "Invalid order status transition"
             );
+        }
+
+        if (newStatus == OrderStatus.CANCELLED && order.getStripeSessionId() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Narudžba ima pokrenuto plaćanje. Prvo zatvorite Stripe sesiju ili obradite povrat novca.");
         }
 
         // Vracanje zaliha ako je narudzba otkazana
@@ -262,7 +272,13 @@ public class OrderService {
                 order.getStatus().name(),
                 order.getTotalAmount(),
                 order.getCreatedAt(),
-                items
+                items,
+                order.getPaymentStatus(),
+                order.getRefundStatus(),
+                order.getShipping() == null ? null : new ShippingDetails(
+                        order.getShipping().getFirstName(), order.getShipping().getLastName(),
+                        order.getShipping().getEmail(), order.getShipping().getAddress(),
+                        order.getShipping().getCity(), order.getShipping().getPostalCode(), order.getShipping().getPhone())
         );
     }
 

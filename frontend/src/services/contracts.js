@@ -44,11 +44,11 @@ export const productSchema = productRequestSchema.extend({
 });
 export const quantitySchema = z.number().int().min(1).max(2147483647);
 export const shippingSchema = profileSchema.extend({
-  email: z.email(),
+  email: z.email().max(254),
   address: z.string().trim().min(5).max(200),
   city: name,
   postalCode: z.string().regex(/^\d{5}$/, 'Unesite petocifreni poštanski broj.'),
-  phone: z.string().trim().min(6).max(30)
+  phone: z.string().trim().min(6).max(30).regex(/^(?=(?:[^0-9]*[0-9]){6})\+?[0-9 ()/.-]{6,30}$/, 'Unesite ispravan broj telefona.')
 });
 export const cartItemSchema = z.object({
   id,
@@ -71,7 +71,9 @@ export const orderSchema = z.object({
   totalAmount: z.number().nonnegative(),
   createdAt: z.string(),
   items: z.array(cartItemSchema),
-  shipping: shippingSchema.optional()
+  paymentStatus: z.enum(['UNPAID', 'PAID', 'REFUNDED']).optional(),
+  refundStatus: z.enum(['NONE', 'PENDING', 'SUCCEEDED', 'FAILED']).optional(),
+  shipping: shippingSchema.nullish()
 });
 export const authSchema = z.object({
   accessToken: z.string().min(1),

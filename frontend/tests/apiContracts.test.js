@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { AxiosError } from 'axios'
 import { createApiService } from '../src/services/adapters/api.js'
 import { authDestination, authReturnState } from '../src/utils/authNavigation.js'
+const shipping = { firstName: 'Test', lastName: 'Kupac', email: 'test@local.test', address: 'Testna ulica 12', city: 'Sarajevo', postalCode: '71000', phone: '+38761123456' }
 const user = { id: 701, firstName: 'Test', lastName: 'Kupac', email: 'test@local.test', role: 'USER' }
 const auth = { accessToken: 'test-access-token', refreshToken: 'test-refresh-token', tokenType: 'Bearer', expiresIn: 60, userId: user.id, email: user.email, role: user.role }
 const cart = { cartId: 42, items: [{ id: 771, productId: 41, productName: 'Laptop', unitPrice: 100, quantity: 1, subtotal: 100 }], totalPrice: 100, totalItems: 1 }
@@ -18,7 +19,7 @@ test('real contracts: database category IDs, cart item IDs, orders and AI action
     if (config.url === '/users/me') return response(config, user)
     if (config.url === '/categories') return response(config, [{ id: 94, name: 'Laptopi', description: null }])
     if (config.url === '/cart/items/771') { assert.deepEqual(body(config), { quantity: 2 }); return response(config, cart) }
-    if (config.url === '/orders') { assert.equal(body(config), undefined); return response(config, { id: 301, userId: 701, status: 'PENDING', totalAmount: 100, createdAt: '2026-11-03T12:00:00', items: cart.items }) }
+    if (config.url === '/orders') { assert.deepEqual(body(config), shipping); return response(config, { shipping, id: 301, userId: 701, status: 'PENDING', totalAmount: 100, createdAt: '2026-11-03T12:00:00', items: cart.items }) }
     if (config.url === '/ai/chat') { assert.equal(config.timeout, 180000); assert.equal(body(config).cartAction, null); assert.equal(body(config).history[0].content, 'Koji laptop?'); return response(config, { reply: 'Prijedlog čeka potvrdu.', pendingAction: action, pendingActions: [action] }) }
     if (config.url.endsWith('/confirm')) return response(config, { message: 'Potvrđeno', cart })
     throw new Error(`Unexpected request ${config.url}`)
@@ -27,7 +28,8 @@ test('real contracts: database category IDs, cart item IDs, orders and AI action
   assert.equal((await service.categories())[0].id, 94)
   assert.equal((await service.categories())[0].slug, 'laptopi')
   await service.updateCart(771, 2)
-  assert.equal((await service.checkout()).id, 301)
+  assert.equal((await service.checkout(shipping)).id, 301)
+  assert.deepEqual((await service.checkout(shipping)).shipping, shipping)
   const chat = await service.chat('Dodaj laptop', { history: [{ role: 'user', content: 'Koji laptop?' }] })
   assert.equal(chat.content, 'Prijedlog čeka potvrdu.')
   assert.equal(chat.pendingActions.length, 1)
@@ -121,5 +123,5 @@ test('ambiguous order responses do not report success or invite blind retries', 
     return response(config, { id: 301 })
   } })
   await service.login({})
-  await assert.rejects(service.checkout(), error => error.uncertain && /Provjerite korpu ili narudžbe/.test(error.message))
+  await assert.rejects(service.checkout(shipping), error => error.uncertain && /Provjerite korpu ili narudžbe/.test(error.message))
 })
