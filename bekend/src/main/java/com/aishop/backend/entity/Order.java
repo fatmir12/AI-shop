@@ -43,6 +43,9 @@ public class Order {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
+    @Embedded
+    private ShippingAddress shipping;
+
     @Column(name = "created_at", nullable = false,
             insertable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -32,3 +32,22 @@ Flyway V9 dodaje payment_status (UNPAID/PAID), Stripe session ID, očekivani izn
 Backend testovi pokrivaju BAM iznos, vlasništvo, ponovnu upotrebu sesije, plaćenu/otkazanu narudžbu, nepodudarne podatke, duple događaje, prijavu i potpis webhooka. Na lokalnom Sandboxu potvrđena je testna uplata 1.599,00 BAM, webhook odgovor 204 i PAID u bazi. Stvarni novac nije naplaćen.
 
 Referentna dokumentacija: https://docs.stripe.com/webhooks/signature , https://docs.stripe.com/payments/checkout/fulfill-orders , https://docs.stripe.com/currencies .
+## Podaci za dostavu
+
+POST /api/orders sada zahtijeva podatke za dostavu u JSON tijelu:
+
+```json
+{
+  "firstName": "Test",
+  "lastName": "Kupac",
+  "email": "test@example.test",
+  "address": "Testna ulica 12",
+  "city": "Sarajevo",
+  "postalCode": "71000",
+  "phone": "+38761123456"
+}
+```
+
+Identitet vlasnika dolazi iz JWT-a, a iznos i stavke iz njegove korpe, ne iz tijela zahtjeva. Server provjerava obavezna polja, dužine, e-mail, petocifreni poštanski broj i telefon. Podaci se normaliziraju uklanjanjem rubnih razmaka te spremaju kao neovisni snapshot uz narudžbu. Naknadne izmjene profila ne mijenjaju raniju adresu. Flyway V10 dodaje nullable shipping_* kolone; stare narudžbe ostaju čitljive sa shipping=null.
+
+Kupac vidi adresu u svojim detaljima narudžbe, a administrator u admin detaljima. POST bez podataka više nije podržan; ažurirati vanjske testne klijente. Forma je trenutno namijenjena dostavi unutar Bosne i Hercegovine. Spremanje adrese ne uvodi obračun poštarine, praćenje pošiljke ili slanje e-maila. Trošak dostave nije uključen u Stripe naplatu.

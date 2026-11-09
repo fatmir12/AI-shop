@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { z } from 'zod'
 import { mapCategory } from '../categories.js'
-import { authSchema, productSchema, categorySchema, cartSchema, orderSchema, userSchema, aiResponseSchema, confirmationSchema, validate } from '../contracts.js'
+import { shippingSchema, authSchema, productSchema, categorySchema, cartSchema, orderSchema, userSchema, aiResponseSchema, confirmationSchema, validate } from '../contracts.js'
 export class ApiError extends Error {
   constructor(message, status, uncertain = false) { super(message); this.name = 'ApiError'; this.status = status; this.uncertain = uncertain }
 }
@@ -85,7 +85,7 @@ export function createApiService({ baseURL = '/api', adapter, now = () => Date.n
     async updateCart(id, quantity) { authenticated(); return validate(cartSchema, (await http.put(`/cart/items/${id}`, { quantity })).data) },
     async removeCart(id) { authenticated(); return validate(cartSchema, (await http.delete(`/cart/items/${id}`)).data) },
     async orders(all) { authenticated(); return validate(z.array(orderSchema), (await http.get(all ? '/orders' : '/orders/my')).data) },
-    async checkout() { authenticated(); return mutationResult(orderSchema, await http.post('/orders')) },
+    async checkout(shipping) { authenticated(); const data = validate(shippingSchema, shipping); return mutationResult(orderSchema, await http.post('/orders', data)) },
     async status(id, status) { authenticated(); return validate(orderSchema, (await http.put(`/orders/${id}/status`, { status })).data) },
     async users() { authenticated(); return validate(z.array(userSchema), (await http.get('/users')).data) },
     async conversations() { authenticated(); return (await http.get('/ai/conversations')).data },

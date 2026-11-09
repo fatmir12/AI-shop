@@ -45,7 +45,7 @@ public class OrderService {
 
     // Kreiranje narudzbe iz korpe
     @Transactional
-    public OrderResponse createOrder(Long userId) {
+    public OrderResponse createOrder(Long userId, ShippingDetails shipping) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -71,6 +71,8 @@ public class OrderService {
 
         Order order = new Order();
         order.setUser(user);
+        order.setShipping(new ShippingAddress(shipping.firstName(), shipping.lastName(), shipping.email(),
+                shipping.address(), shipping.city(), shipping.postalCode(), shipping.phone()));
         order.setStatus(OrderStatus.PENDING);
         order.setTotalAmount(BigDecimal.ZERO);
 
@@ -268,7 +270,11 @@ public class OrderService {
                 order.getTotalAmount(),
                 order.getCreatedAt(),
                 items,
-                order.getPaymentStatus()
+                order.getPaymentStatus(),
+                order.getShipping() == null ? null : new ShippingDetails(
+                        order.getShipping().getFirstName(), order.getShipping().getLastName(),
+                        order.getShipping().getEmail(), order.getShipping().getAddress(),
+                        order.getShipping().getCity(), order.getShipping().getPostalCode(), order.getShipping().getPhone())
         );
     }
 

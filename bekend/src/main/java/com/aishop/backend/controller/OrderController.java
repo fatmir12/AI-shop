@@ -2,6 +2,7 @@
 package com.aishop.backend.controller;
 
 import com.aishop.backend.dto.OrderResponse;
+import com.aishop.backend.dto.ShippingDetails;
 import com.aishop.backend.dto.UpdateOrderStatusRequest;
 import com.aishop.backend.service.OrderService;
 
@@ -29,9 +30,10 @@ public class OrderController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public OrderResponse createOrder(
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody ShippingDetails shipping) {
 
-        return orderService.createOrder(getUserId(jwt));
+        return orderService.createOrder(getUserId(jwt), shipping);
     }
 
     // Historija mojih narudzbi
