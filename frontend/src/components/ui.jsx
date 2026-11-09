@@ -52,6 +52,7 @@ export function Modal({
   }}><div className="modal-header"><h2 id={headingId}>{title}</h2><button className="icon-btn" onClick={dismiss} aria-label={t("Close dialog")}><X /></button></div>{children}</dialog>;
 }
 export function Image({
+  fallbackSrc = '/product-fallback.svg',
   src,
   alt,
   className = '',
@@ -59,9 +60,10 @@ export function Image({
   fetchPriority,
   ...props
 }) {
-  return <img {...props} className={className} src={src || '/product-fallback.svg'} alt={alt} loading={loading} fetchPriority={fetchPriority} decoding="async" onError={e => {
+  return <img {...props} className={className} src={src || fallbackSrc} alt={alt} loading={loading} fetchPriority={fetchPriority} decoding="async" onError={e => {
     e.currentTarget.onerror = null;
-    e.currentTarget.src = '/product-fallback.svg';
+    e.currentTarget.src = fallbackSrc;
+    e.currentTarget.alt = 'Ilustrativni prikaz: ' + alt;
   }} />;
 }
 export function PhotoNote({ src }) {

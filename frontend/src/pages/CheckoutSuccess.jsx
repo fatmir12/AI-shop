@@ -12,13 +12,15 @@ export default function CheckoutSuccess() {
     queryFn: () => PaymentService.sessionStatus(sessionId),
     enabled: Boolean(sessionId),
     retry: false,
-    refetchInterval: query => query.state.data?.paymentStatus === 'UNPAID' ? 5000 : false,
+    refetchInterval: query => query.state.data?.paymentStatus === 'UNPAID' && query.state.data?.checkoutStatus !== 'expired' ? 5000 : false,
   });
   const paid = payment.data?.paymentStatus === 'PAID';
-  useEffect(() => { if (paid) void cache.invalidateQueries({ queryKey: ['orders'] }); }, [paid, cache]);
+  const refunded = payment.data?.paymentStatus === 'REFUNDED';
+  const expired = payment.data?.checkoutStatus === 'expired';
+  useEffect(() => { if (paid || refunded) void cache.invalidateQueries({ queryKey: ['orders'] }); }, [paid, refunded, cache]);
   return <div className="container page confirmation"><section className="panel" aria-live="polite">
-    <h1>{paid ? 'Plaćanje je potvrđeno' : 'Provjera plaćanja'}</h1>
-    {paid ? <p>Hvala! Uplata za narudžbu #{payment.data.orderId} potvrđena je na serveru.</p>
+    <h1>{refunded ? 'Novac je vraćen' : paid ? 'Plaćanje je potvrđeno' : expired ? 'Sesija plaćanja je istekla' : 'Provjera plaćanja'}</h1>
+    {refunded ? <p>Puni povrat je potvrđen. Detalje možete pregledati u narudžbi.</p> : expired ? <p>Ova sesija više nije aktivna. Otvorite narudžbu za siguran nastavak ili otkazivanje.</p> : paid ? <p>Hvala! Uplata za narudžbu #{payment.data.orderId} potvrđena je na serveru.</p>
       : !sessionId ? <p>Nedostaje oznaka plaćanja. Provjerite svoje narudžbe.</p>
       : payment.isError ? <><p role="alert">Potvrda trenutno nije dostupna. Nemojte ponovo plaćati dok ne provjerite status narudžbe.</p><button className="btn" onClick={() => payment.refetch()}>Provjeri ponovo</button></>
       : <p>{payment.isPending ? 'Provjeravamo Stripe potvrdu…' : 'Uplata još nije potvrđena. Status će se osvježiti automatski.'}</p>}

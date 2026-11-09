@@ -32,7 +32,16 @@ public class PaymentController {
         try { return stripe.sessionStatus(Long.valueOf(jwt.getSubject()), sessionId); }
         catch (StripeException e) { throw unavailable(); }
     }
-    @PostMapping("/webhook")
+    @PostMapping("/cancel")
+    public PaymentStatusResponse cancel(@RequestParam Long orderId, @AuthenticationPrincipal Jwt jwt) {
+        try { return stripe.cancelOrder(Long.valueOf(jwt.getSubject()), orderId, "ADMIN".equals(jwt.getClaimAsString("role"))); }
+        catch (StripeException e) { throw unavailable(); }
+    }
+    @PostMapping("/refund")
+    public PaymentStatusResponse refund(@RequestParam Long orderId) {
+        try { return stripe.refundOrder(orderId); }
+        catch (StripeException e) { throw unavailable(); }
+    }    @PostMapping("/webhook")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void webhook(@RequestBody String payload,
             @RequestHeader(value="Stripe-Signature", required=false) String signature) {

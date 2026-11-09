@@ -1,0 +1,2 @@
+export const paymentLabel = status => ({ UNPAID: 'Čeka uplatu', PAID: 'Plaćeno', REFUNDED: 'Novac vraćen' })[status] || 'Čeka uplatu';
+export const refundLabel = status => ({ NONE: 'Nije zatražen', PENDING: 'Povrat je u obradi', SUCCEEDED: 'Povrat je potvrđen', FAILED: 'Povrat nije uspio — provjerite Stripe evidenciju' })[status] || 'Nije zatražen';

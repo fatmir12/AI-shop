@@ -43,6 +43,10 @@ public class Order {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
+    @Column(name="payment_attempt", nullable=false) private int paymentAttempt;
+    @Column(name="refund_status", nullable=false, length=20) private String refundStatus = "NONE";
+    @Column(name="stripe_refund_id", length=255) private String stripeRefundId;
+
     @Embedded
     private ShippingAddress shipping;
 

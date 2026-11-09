@@ -14,7 +14,7 @@ export const CheckoutButton = ({ orderId, disabled = false }) => {
       if (session && session.sessionUrl) {
         PaymentService.redirectToCheckout(session.sessionUrl);
       } else {
-        setError('Plaćanje se nije otvorilo. Pokušajte ponovo ili provjerite narudžbu.');
+        window.location.assign('/account/orders/' + orderId);
       }
     } catch (err) {
       setError(err.message || 'Plaćanje trenutno nije dostupno. Pokušajte ponovo.');

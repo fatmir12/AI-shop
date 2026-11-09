@@ -14,6 +14,8 @@ public interface OrderRepository
     @org.springframework.data.jpa.repository.Query("select o from Order o where o.id = :id")
     Optional<Order> findForPayment(@org.springframework.data.repository.query.Param("id") Long id);
 
+    Optional<Order> findByStripeRefundId(String stripeRefundId);
+
     Optional<Order> findByStripeSessionId(String stripeSessionId);
 
     List<Order> findByUserIdOrderByCreatedAtDesc(

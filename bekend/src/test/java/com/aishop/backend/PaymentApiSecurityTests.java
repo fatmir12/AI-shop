@@ -50,4 +50,18 @@ class PaymentApiSecurityTests {
                 .contentType("application/json").content(body)).andExpect(status().isNoContent());
         verify(stripe).handleEvent(any());
     }
-}
+    @Test void refundIsAdminOnlyAndCancellationUsesAuthenticatedIdentity() throws Exception {
+        mvc.perform(post("/api/checkout/refund?orderId=4")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/checkout/refund?orderId=4").with(
+                org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt()))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/checkout/refund?orderId=4").with(
+                org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt().authorities(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isOk());
+        verify(stripe).refundOrder(4L);
+        mvc.perform(post("/api/checkout/cancel?orderId=4").with(
+                org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt().jwt(j->j.subject("7").claim("role","USER"))))
+                .andExpect(status().isOk());
+        verify(stripe).cancelOrder(7L,4L,false);
+    }}

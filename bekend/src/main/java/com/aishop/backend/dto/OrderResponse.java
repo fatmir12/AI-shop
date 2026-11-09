@@ -13,6 +13,7 @@ public record OrderResponse(
         LocalDateTime createdAt,
         List<OrderItemResponse> items,
         String paymentStatus,
+        String refundStatus,
         ShippingDetails shipping
 ) {
 }

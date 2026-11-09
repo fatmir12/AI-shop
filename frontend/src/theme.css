@@ -124,3 +124,6 @@
 @media(prefers-reduced-motion:reduce){.storefront-theme.aishop-ui .product-card:hover,.storefront-theme.aishop-ui .category-card:hover{transform:none}}
 
 .shipping-details { overflow-wrap: anywhere; }
+
+.payment-actions { display:grid; gap:12px; margin-top:20px; }
+.payment-actions dialog p { line-height:1.65; max-width:55ch; }

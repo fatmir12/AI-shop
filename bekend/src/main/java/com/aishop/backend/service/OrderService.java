@@ -189,6 +189,9 @@ public class OrderService {
                         "Order not found"
                 ));
 
+        if ("PENDING".equals(order.getRefundStatus()) || "REFUNDED".equals(order.getPaymentStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Narudžba ima povrat novca i ne može se dalje obrađivati.");
+        }
         OrderStatus currentStatus = order.getStatus();
         OrderStatus newStatus = request.status();
 
@@ -271,6 +274,7 @@ public class OrderService {
                 order.getCreatedAt(),
                 items,
                 order.getPaymentStatus(),
+                order.getRefundStatus(),
                 order.getShipping() == null ? null : new ShippingDetails(
                         order.getShipping().getFirstName(), order.getShipping().getLastName(),
                         order.getShipping().getEmail(), order.getShipping().getAddress(),

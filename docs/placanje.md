@@ -1,53 +1,37 @@
-# Plaćanje narudžbi
+# Plaćanje, otkazivanje i povrat novca
 
-Cijene kataloga i narudžbi su u BAM (KM). Stripe Checkout prima ukupni iznos narudžbe u feningima, bez promjene valute ili pretvaranja KM u EUR. Ukupni iznos je jedan Stripe redak za narudžbu; detalji proizvoda ostaju u aplikaciji.
+## Konfiguracija i valuta
+Katalog, narudžbe i Stripe naplata koriste BAM (KM), u feningima bez pretvaranja u EUR. Stripe prikazuje ukupnu narudžbu kao jednu stavku; detalji proizvoda su u aplikaciji. Ključ STRIPE_API_KEY i potpisna tajna STRIPE_WEBHOOK_SECRET pripadaju samo backendu. APP_FRONTEND_URL je lokalno http://localhost:5173. Za produkciju treba zaseban HTTPS webhook i odgovarajuće ključeve. Ne objavljivati tajne.
 
-## Konfiguracija
-
-Backend zahtijeva STRIPE_API_KEY. Za test koristiti samo testni ključ. APP_FRONTEND_URL je javna adresa frontenda (lokalno http://localhost:5173). STRIPE_WEBHOOK_SECRET je potpisna tajna konkretnog webhook endpointa. Tajne nisu frontend varijable i ne smiju ući u Git.
-
-Lokalno, službenim Stripe CLI-jem prijavljenim na isto Sandbox okruženje:
-
+Lokalni službeni Stripe CLI:
 ```sh
-stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded --forward-to http://localhost:8081/api/checkout/webhook
+stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,refund.created,refund.updated,refund.failed --forward-to http://localhost:8081/api/checkout/webhook
 ```
+Potpisnu tajnu iz te CLI veze postaviti prije pokretanja backenda. Listener mora ostati pokrenut. Povratna stranica dodatno provjerava sesiju direktno na serveru; sam URL nikad ne dokazuje uplatu.
 
-Vraćenu potpisnu tajnu postaviti kao STRIPE_WEBHOOK_SECRET prije pokretanja backenda. Za produkciju registrirati odgovarajući HTTPS webhook i koristiti njegovu zasebnu tajnu; lokalni CLI mora raditi za lokalnu dostavu događaja.
+## Dostava
+POST /api/orders traži JSON s firstName, lastName, email, address, city, postalCode (5 cifara) i phone. Server validira i normalizira podatke. Vlasnik dolazi iz JWT-a, cijene i količine iz korpe. Adresa je snapshot; naknadna izmjena profila je ne mijenja. Stare narudžbe mogu imati shipping=null. Forma je za BiH; poštarina, kurirsko praćenje i slanje e-maila nisu implementirani.
 
-Flyway V9 dodaje payment_status (UNPAID/PAID), Stripe session ID, očekivani iznos/valutu i vrijeme potvrde. Status naplate odvojen je od statusa obrade i dostave narudžbe.
+## Plaćanje i oporavak
+- POST /api/checkout/create-session?orderId=...: prijavljeni vlasnik narudžbe. Otvorena sesija se ponovo koristi, a istekla se zamjenjuje novom s novim rednim brojem pokušaja. DB zaključavanje i stabilan idempotency ključ po pokušaju sprečavaju duple sesije.
+- Plaćena, refundirana ili otkazana narudžba ne može dobiti novu naplatu. Ako povratak kupca kasni, GET /api/checkout/session-status?sessionId=... provjerava vlasništvo i stvarni Stripe status.
+- POST /api/checkout/webhook prima sirovo tijelo i zahtijeva valjan potpis s vremenskom provjerom. Backend dohvaća autentičnu sesiju, provjerava ID, orderId, BAM i očekivani iznos. Samo payment_status=paid upisuje PAID.
+- Ponovljeni događaji ne skidaju ponovo zalihe i ne mijenjaju već potvrđeni povrat u novu naplatu.
+- Povratak dugmetom Back/Cancel na Stripeu ne otkazuje narudžbu. Rezervirana zaliha ostaje dok kupac ili admin izričito ne otkaže narudžbu; sam istek sesije ne vraća zalihu. Zato se istekla sesija može obnoviti bez ponovnog rezerviranja robe.
 
-## Tok i zaštite
+## Sigurno otkazivanje
+POST /api/checkout/cancel?orderId=... dozvoljen je vlasniku ili ADMIN-u. Samo PENDING/CONFIRMED neplaćene narudžbe mogu se otkazati. Backend zaključava narudžbu, dohvaća Stripe stanje i zatvara otvorenu sesiju prije vraćanja zaliha. Ako je uplata pobijedila utrku, narudžba se označava plaćenom i ne vraća se zaliha. Ako Stripe još obrađuje naplatu ili zatvaranje ne uspije, nema otkazivanja. Ponovljeno otkazivanje je bez novih promjena zaliha.
 
-- POST /api/checkout/create-session?orderId=... zahtijeva prijavu i vlasništvo nad narudžbom. Zaključavanje narudžbe i Stripe idempotency ključ štite od paralelnih duplih sesija. Postojeća otvorena sesija ponovo se koristi.
-- POST /api/checkout/webhook ne koristi bearer prijavu. Mora imati valjan Stripe-Signature, vremensku provjeru i neizmijenjeno tijelo zahtjeva. Bez konfigurirane tajne vraća 503, bez valjanog potpisa 400.
-- Nakon potpisanog događaja backend dohvaća sesiju direktno od Stripea. ID sesije, orderId metadata, valuta i ukupni iznos moraju odgovarati spremljenoj narudžbi. Samo Stripe payment_status=paid evidentira PAID. Duplikati ne mijenjaju vrijeme potvrde i ne pokreću ponovno skidanje zaliha.
-- Autentificirani GET /api/checkout/session-status?sessionId=... provjerava vlasništvo i Stripe status na serveru; koristi istu provjeru za siguran povratak kupca čak i ako webhook kasni.
-- Success URL sam po sebi nije potvrda uplate. Nakon povratka korisnik se po potrebi ponovo prijavljuje jer se tokeni čuvaju u memoriji. Aplikacija zatim prikazuje rezultat serverske provjere.
-- Odustajanje od Stripea ne otkazuje narudžbu. Nastavak je dostupan kroz detalje neplaćene narudžbe. Istekla sesija vraća konflikt i ne kreira automatski novu naplatu.
-- Narudžba s pokrenutim Stripe plaćanjem ne može se automatski otkazati kroz običnu promjenu statusa: prvo treba zatvoriti sesiju ili obraditi povrat. Povrati novca i automatsko oslobađanje zaliha nakon isteka nisu implementirani.
-- Migracija ne uvozi stare Stripe sesije ili prethodne uplate. Starije naplate prije V9 potrebno je uskladiti sa Stripe evidencijom prije ponovnog plaćanja.
+## Puni povrat prije slanja robe
+POST /api/checkout/refund?orderId=... zahtijeva ADMIN. UI prikazuje iznos i traži potvrdu. Podržan je puni povrat originalnog iznosa na izvorno sredstvo plaćanja prije slanja robe (PENDING/CONFIRMED). Poslana/dostavljena roba zahtijeva zaseban proces fizičkog povrata, koji nije implementiran.
 
-## Provjera
+Backend prvo provjeri naplatu, a zatim koristi stabilan idempotency ključ povrata. Refund ID i status spremaju se u bazu. PENDING ne znači vraćen novac i blokira daljnju obradu/slanje narudžbe. Tek Stripe succeeded mijenja paymentStatus u REFUNDED, refundStatus u SUCCEEDED, otkazuje narudžbu i vraća zalihu jednom. Pending/failed povrati mogu se provjeriti ponovnim admin pozivom, bez kreiranja dodatnog povrata. Neuspjeli povrat zahtijeva ručnu provjeru Stripe evidencije; automatsko ponovno izdavanje i djelomični povrati nisu podržani.
 
-Backend testovi pokrivaju BAM iznos, vlasništvo, ponovnu upotrebu sesije, plaćenu/otkazanu narudžbu, nepodudarne podatke, duple događaje, prijavu i potpis webhooka. Na lokalnom Sandboxu potvrđena je testna uplata 1.599,00 BAM, webhook odgovor 204 i PAID u bazi. Stvarni novac nije naplaćen.
+Potpisani refund.created/refund.updated/refund.failed događaji također osvježavaju status. Provjeravaju se refund ID, PaymentIntent, iznos i valuta. Administrator može ručno osvježiti stanje ako webhook kasni. Refund iz Stripe dashboarda koji nije pokrenut kroz ovaj endpoint nije automatski uvezen; potrebno ga je uskladiti prije sljedeće radnje.
 
-Referentna dokumentacija: https://docs.stripe.com/webhooks/signature , https://docs.stripe.com/payments/checkout/fulfill-orders , https://docs.stripe.com/currencies .
-## Podaci za dostavu
+## Migracije i provjere
+V9 dodaje naplatu, V10 snapshot dostave, V11 redni broj pokušaja te refund ID/status. Ranije Stripe sesije i uplate prije V9 nisu automatski uvezene: prije ponovnog plaćanja treba ih uskladiti s evidencijom.
 
-POST /api/orders sada zahtijeva podatke za dostavu u JSON tijelu:
+Testovi pokrivaju iznose, vlasništvo, ADMIN ograničenje, potpis, zamjenu istekle sesije, utrku plaćanja i otkazivanja, količinu vraćene zalihe, ponovljene radnje i pending/succeeded povrat. U lokalnom Sandboxu potvrđena je zamjena istekle sesije, sigurno otkazivanje s vraćanjem jednog komada i uspješan puni povrat testne uplate 1.599,00 KM. Stvarni novac nije korišten.
 
-```json
-{
-  "firstName": "Test",
-  "lastName": "Kupac",
-  "email": "test@example.test",
-  "address": "Testna ulica 12",
-  "city": "Sarajevo",
-  "postalCode": "71000",
-  "phone": "+38761123456"
-}
-```
-
-Identitet vlasnika dolazi iz JWT-a, a iznos i stavke iz njegove korpe, ne iz tijela zahtjeva. Server provjerava obavezna polja, dužine, e-mail, petocifreni poštanski broj i telefon. Podaci se normaliziraju uklanjanjem rubnih razmaka te spremaju kao neovisni snapshot uz narudžbu. Naknadne izmjene profila ne mijenjaju raniju adresu. Flyway V10 dodaje nullable shipping_* kolone; stare narudžbe ostaju čitljive sa shipping=null.
-
-Kupac vidi adresu u svojim detaljima narudžbe, a administrator u admin detaljima. POST bez podataka više nije podržan; ažurirati vanjske testne klijente. Forma je trenutno namijenjena dostavi unutar Bosne i Hercegovine. Spremanje adrese ne uvodi obračun poštarine, praćenje pošiljke ili slanje e-maila. Trošak dostave nije uključen u Stripe naplatu.
+Referentne upute: https://docs.stripe.com/refunds , https://docs.stripe.com/api/checkout/sessions/expire , https://docs.stripe.com/webhooks/signature .
