@@ -10,6 +10,46 @@ const cart = { cartId: 42, items: [{ id: 771, productId: 41, productName: 'Lapto
 const action = { actionId: '9d88ece4-6c59-4878-ac0f-bccbb53f8878', type: 'ADD', productId: 41, itemId: null, quantity: 1, expiresAt: '2027-01-01T12:00:00Z', status: 'PENDING_CONFIRMATION' }
 const body = config => config.data ? JSON.parse(config.data) : undefined
 const response = (config, data) => ({ config, data, status: 200, statusText: 'OK', headers: {} })
+
+test('Stripe navigation restores and rotates the same-tab session once; logout clears it', async () => {
+  const saved = new Map()
+  const storage = { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value), removeItem: key => saved.delete(key) }
+  let refreshes = 0
+  const adapter = async config => {
+    if (config.url === '/auth/login') return response(config, auth)
+    if (config.url === '/auth/refresh') {
+      refreshes++
+      assert.equal(body(config).refreshToken, auth.refreshToken)
+      await new Promise(resolve => setTimeout(resolve, 5))
+      return response(config, { ...auth, accessToken: 'restored', refreshToken: 'rotated-refresh' })
+    }
+    if (config.url === '/auth/logout') { assert.equal(body(config).refreshToken, 'rotated-refresh'); return response(config, null) }
+    if (config.url === '/users/me') return response(config, user)
+    assert.equal(config.headers.Authorization, 'Bearer restored')
+    return response(config, cart)
+  }
+  await createApiService({ storage, adapter }).login({})
+  assert.deepEqual([...saved.values()], [auth.refreshToken])
+  const returned = createApiService({ storage, adapter })
+  assert.deepEqual(await Promise.all([returned.initialize(), returned.initialize()]), [user, user])
+  assert.equal(refreshes, 1)
+  await returned.cart()
+  assert.deepEqual([...saved.values()], ['rotated-refresh'])
+  await returned.logout()
+  assert.equal(saved.size, 0)
+  assert.equal(await createApiService({ storage, adapter }).initialize(), null)
+})
+
+test('revoked persisted session is cleared without restoring the user', async () => {
+  const saved = new Map([['aishop.refresh:/api', 'revoked']])
+  const storage = { getItem: key => saved.get(key), removeItem: key => saved.delete(key) }
+  const service = createApiService({ storage, adapter: async config => {
+    throw new AxiosError('expired', 'ERR_BAD_REQUEST', config, null, { status: 401, data: {} })
+  } })
+  await assert.rejects(service.initialize())
+  assert.equal(saved.size, 0)
+  assert.equal(await service.initialize(), null)
+})
 test('real contracts: database category IDs, cart item IDs, orders and AI actions', async () => {
   const calls = []
   const service = createApiService({ sessionExpired: () => {}, adapter: async config => {

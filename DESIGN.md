@@ -129,3 +129,6 @@ Controls use the control radius; reusable panels use the panel radius. Responsiv
 - Add fake alternate image views or decorative analytics.
 - Replace the approved admin composition during a polish pass.
 - Make controls depend on hover, color alone or a disappearing text label.
+
+## Odobreni logo — 2026-11-10
+Novi znak spaja slovo A i vrećicu za kupovinu. Korisnik je odobrio dostavljeni crno-bijeli prijedlog. Produkcijski logo i natpis su SVG putanje, bez ugrađenog rastera ili zavisnosti od fonta: `frontend/public/aishop-logo.svg`, bijela verzija `aishop-logo-white.svg`, samostalni znak `aishop-mark.svg`. Header/footer koriste crnu verziju, admin bijelu, favicon samostalni znak. Apple touch ikonica je zaseban PNG zbog podrške platforme.

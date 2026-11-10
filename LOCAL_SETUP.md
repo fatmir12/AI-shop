@@ -168,7 +168,7 @@ Vite proxies only `/api` to port 8081. Browser CORS configuration is unnecessary
 
 ## 8. USER and ADMIN accounts
 
-Register a new USER through `/register` with a real local-demo email, names and your chosen password. Registration creates the database account and logs in. Login/register fetch `/api/users/me`; its role determines navigation. Tokens are kept only in memory, refresh rotates them, and a page reload requires login again. No password or real token is stored in browser localStorage.
+Register a new USER through `/register` with a real local-demo email, names and your chosen password. Registration creates the database account and logs in. Login/register fetch `/api/users/me`; its role determines navigation. Access tokens stay in memory. A rotating refresh token is kept in sessionStorage for the current tab, so reloads and Stripe returns restore the login. Logout clears it. Passwords and tokens are not stored in localStorage. Stripe APP_FRONTEND_URL must match the frontend origin used to log in.
 
 To prepare an ADMIN, register a second account normally, then manually run this narrowly scoped SQL in the local demo database after replacing the placeholder email with that account:
 
@@ -255,7 +255,7 @@ All items below are implemented in code but **await verification against the rea
 - [ ] Natural-language cart request returns a structured proposal without mutation.
 - [ ] Confirmation executes once and updates the displayed cart/count.
 - [ ] Expired/missing/already consumed proposals show errors without fake success.
-- [ ] Reload requires login and never imports mock identities or mock catalog data.
+- [ ] Reload restores the same-tab API session using a rotated refresh token and never imports mock identities or mock catalog data.
 - [ ] Assistant bar question survives login and is submitted once.
 - [ ] Desktop/mobile UI, category transitions and reduced-motion behavior remain correct.
 
@@ -270,7 +270,7 @@ All items below are implemented in code but **await verification against the rea
 | Empty product grid | Check GET /api/products. Run the optional seed only on an empty table, or add products as ADMIN. |
 | Backend healthy, frontend cannot connect | Verify port 8081, Vite proxy, VITE_API_BASE_URL and stale .env.local; restart Vite. |
 | UI still shows mock demo credentials | VITE_DATA_SOURCE must be api; .env.local wins over .env. |
-| 401 after reload | Expected with memory-only tokens; sign in again. |
+| 401 after reload | Check refresh expiry/revocation and sessionStorage access; sign in again if the session expired. |
 | ADMIN still has USER access | Sign out/in after the local database role change. |
 | AI timeout / missing tool calls | Verify Ollama service, exact installed OLLAMA_MODEL, tool support, MCP_BASE_URL and backend tool logs. |
 | MCP 401 | Use the JWT from the active API login; internal MCP calls forward it. Do not disable SecurityConfig. |
