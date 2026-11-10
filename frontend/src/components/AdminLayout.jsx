@@ -63,7 +63,7 @@ export default function AdminLayout() {
     <a className="admin-skip" href="#admin-main">Preskoči na sadržaj</a>
     {open && <button className="admin-menu-backdrop" aria-label="Zatvori navigaciju" onClick={closeMenu} tabIndex={-1} />}
     <aside ref={menu} id="admin-navigation" className={`admin-sidebar${open ? ' open' : ''}`} role={open ? 'dialog' : undefined} aria-modal={open || undefined} aria-label="Administratorska navigacija">
-      <div className="admin-brand-row"><Link to="/admin" className="admin-brand" onClick={closeMenu}>AIShop</Link><button className="admin-mobile-close icon-btn" aria-label="Zatvori navigaciju" onClick={closeMenu}><X size={20} /></button></div>
+      <div className="admin-brand-row"><Link to="/admin" className="admin-brand" aria-label="AIShop — administracija" onClick={closeMenu}><img src="/aishop-logo-white.svg" alt="AIShop" width="160" height="43" /></Link><button className="admin-mobile-close icon-btn" aria-label="Zatvori navigaciju" onClick={closeMenu}><X size={20} /></button></div>
       <span className="admin-sidebar-caption">ADMINISTRACIJA</span>
       <div className="admin-sidebar-divider" />
       <span className="admin-sidebar-caption">RADNI PROSTOR</span>

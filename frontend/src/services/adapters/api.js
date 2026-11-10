@@ -5,16 +5,21 @@ import { shippingSchema, authSchema, productSchema, categorySchema, cartSchema, 
 export class ApiError extends Error {
   constructor(message, status, uncertain = false) { super(message); this.name = 'ApiError'; this.status = status; this.uncertain = uncertain }
 }
-export function createApiService({ baseURL = '/api', adapter, now = () => Date.now(), sessionExpired = () => window.dispatchEvent(new Event('aishop:session-expired')) } = {}) {
+const browserSessionStorage = () => { try { return globalThis.sessionStorage } catch { return undefined } }
+export function createApiService({ baseURL = '/api', adapter, now = () => Date.now(), storage = browserSessionStorage(), sessionExpired = () => window.dispatchEvent(new Event('aishop:session-expired')) } = {}) {
   const http = axios.create({ baseURL, timeout: 15000, ...(adapter ? { adapter } : {}) })
   const authHttp = axios.create({ baseURL, timeout: 15000, ...(adapter ? { adapter } : {}) })
   let tokens = null
   let expiresAt = 0
   let refresh = null
   let generation = 0
-  const clear = () => { tokens = null; expiresAt = 0; generation++ }
+  let initialization = null
+  const storageKey = `aishop.refresh:${baseURL}`
+  const storedRefresh = () => { try { return storage?.getItem(storageKey) } catch { return null } }
+  const persistRefresh = value => { try { if (value) storage?.setItem(storageKey, value); else storage?.removeItem(storageKey) } catch { /* Continue in memory when storage is unavailable. */ } }
+  const clear = () => { tokens = null; expiresAt = 0; generation++; persistRefresh(null) }
   const expire = () => { clear(); sessionExpired() }
-  const setTokens = data => { tokens = validate(authSchema, data); expiresAt = now() + tokens.expiresIn * 1000 }
+  const setTokens = data => { tokens = validate(authSchema, data); expiresAt = now() + tokens.expiresIn * 1000; persistRefresh(tokens.refreshToken) }
   http.interceptors.request.use(async config => {
     if (!config.url.startsWith('/auth/') && tokens) {
       const expected = generation
@@ -61,6 +66,7 @@ export function createApiService({ baseURL = '/api', adapter, now = () => Date.n
   const authenticate = async (path, input) => {
     const expected = ++generation
     tokens = null
+    persistRefresh(null)
     const response = await http.post(path, input)
     if (generation !== expected) throw new ApiError('Prijava je otkazana.', 401)
     setTokens(response.data)
@@ -69,10 +75,30 @@ export function createApiService({ baseURL = '/api', adapter, now = () => Date.n
   }
   return {
     http,
-    async initialize() { return tokens ? validate(userSchema, (await http.get('/users/me')).data) : null },
+    initialize() {
+      if (initialization) return initialization
+      const expected = generation
+      initialization = (async () => {
+        if (!tokens) {
+          const refreshToken = storedRefresh()
+          if (!refreshToken) return null
+          try {
+            const response = await authHttp.post('/auth/refresh', { refreshToken })
+            if (generation !== expected) return null
+            setTokens(response.data)
+          } catch (error) {
+            if (generation === expected && [400, 401, 403].includes(error.response?.status)) clear()
+            throw error
+          }
+        }
+        const user = validate(userSchema, (await http.get('/users/me')).data)
+        return generation === expected ? user : null
+      })().finally(() => { initialization = null })
+      return initialization
+    },
     login: input => authenticate('/auth/login', input),
     register: input => authenticate('/auth/register', input),
-    async logout() { const refreshToken = tokens?.refreshToken; clear(); if (refreshToken) await http.post('/auth/logout', { refreshToken }) },
+    async logout() { const refreshToken = tokens?.refreshToken ?? storedRefresh(); clear(); if (refreshToken) await http.post('/auth/logout', { refreshToken }) },
     async profile(input) { authenticated(); return validate(userSchema, (await http.put('/users/me', input)).data) },
     async products() { return validate(z.array(productSchema), (await http.get('/products')).data) },
     async categories() { return validate(z.array(categorySchema), (await http.get('/categories')).data).map(mapCategory) },

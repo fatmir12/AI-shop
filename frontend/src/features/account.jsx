@@ -2,9 +2,9 @@ import PaymentActions from '../components/PaymentActions';
 import { paymentLabel } from '../utils/payment';
 import { t } from "../i18n/bs.js";
 import { useState, useRef } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { UserRound, Package, ArrowRight } from 'lucide-react';
+import { UserRound, Package, ArrowRight, LogOut } from 'lucide-react';
 import { useApp } from '../app/context';
 import { service, isMock } from '../services';
 import { money, errorMessage } from '../utils/shop';
@@ -22,8 +22,22 @@ export function Account({
   const {
     user,
     setUser,
+    logout,
     notify
   } = useApp();
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+  const signOut = async () => {
+    setSigningOut(true);
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      notify(errorMessage(error), true);
+    } finally {
+      setSigningOut(false);
+    }
+  };
   const query = useQuery({
     queryKey: ['orders', user?.id],
     queryFn: () => service.orders()
@@ -52,7 +66,7 @@ export function Account({
     }
   };
   if (!user) return null;
-  return <div className="container page"><div className="page-heading"><h1>{id ? t("Your order, in detail.") : ordersOnly ? t("Your good finds.") : `Pozdrav, ${user.firstName}.`}</h1><p>{t("Everything you need, right where you left it.")}</p></div><div className="account-layout"><aside className="account-nav"><span className="avatar large">{user.firstName[0]}</span><strong>{user.firstName} {user.lastName}</strong><small>{user.email}</small><Link to="/account"><UserRound size={17} />{t("My profile")}</Link><Link to="/account/orders"><Package size={17} />{t("My orders")}</Link><Link to="/products">{t("Keep discovering")}<ArrowRight size={17} /></Link></aside><div>{!ordersOnly && !id && <section className="panel"><h2>{t("Personal information")}</h2><p className="muted">{isMock ? t("Changes are saved in this browser\u2019s mock storage.") : t('Izmjene se čuvaju na vašem korisničkom računu.')}</p><form onSubmit={submit}><div className="form-row"><Field label={t("First name")} name="firstName" required maxLength={100} defaultValue={user.firstName} /><Field label={t("Last name")} name="lastName" required maxLength={100} defaultValue={user.lastName} /></div><Field label={t("Email")} type="email" value={user.email} disabled /><button className="btn" disabled={busy}>{busy ? t("Saving\u2026") : t("Save changes")}</button></form></section>}<section className="panel"><h2>{id ? t("Order details") : t("Order history")}</h2>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : id ? query.data.find(o => o.id === Number(id)) ? <OrderDetails order={query.data.find(o => o.id === Number(id))} /> : <Empty title={t("Order not found")} text={t("This order is not associated with your account.")} /> : !query.data.length ? <Empty title={t("Your story starts here")} text={t("Your orders will appear here after your first checkout.")}><Link className="btn" to="/products">{t("Explore the collection")}</Link></Empty> : query.data.map(o => <Link className="order-summary" to={`/account/orders/${o.id}`} key={o.id}><div><strong>#{o.id}</strong><small>{new Date(o.createdAt).toLocaleDateString('bs-BA')} · {o.items.length}{t("products")}</small></div><Status status={o.status} />{!isMock && <small>{paymentLabel(o.paymentStatus)}</small>}<strong>{money(o.totalAmount)}</strong><ArrowRight size={17} /></Link>)}</section></div></div></div>;
+  return <div className="container page"><div className="page-heading account-heading"><div><h1>{id ? t("Your order, in detail.") : ordersOnly ? t("Your good finds.") : `Pozdrav, ${user.firstName}.`}</h1><p>{t("Everything you need, right where you left it.")}</p></div><button type="button" className="btn secondary account-signout" disabled={signingOut} onClick={signOut}><LogOut size={18} aria-hidden="true" />{signingOut ? 'Odjava u toku…' : 'Odjavi se'}</button></div><div className="account-layout"><aside className="account-nav"><span className="avatar large">{user.firstName[0]}</span><strong>{user.firstName} {user.lastName}</strong><small>{user.email}</small><Link to="/account"><UserRound size={17} />{t("My profile")}</Link><Link to="/account/orders"><Package size={17} />{t("My orders")}</Link><Link to="/products">{t("Keep discovering")}<ArrowRight size={17} /></Link></aside><div>{!ordersOnly && !id && <section className="panel"><h2>{t("Personal information")}</h2><p className="muted">{isMock ? t("Changes are saved in this browser\u2019s mock storage.") : t('Izmjene se čuvaju na vašem korisničkom računu.')}</p><form onSubmit={submit}><div className="form-row"><Field label={t("First name")} name="firstName" required maxLength={100} defaultValue={user.firstName} /><Field label={t("Last name")} name="lastName" required maxLength={100} defaultValue={user.lastName} /></div><Field label={t("Email")} type="email" value={user.email} disabled /><button className="btn" disabled={busy}>{busy ? t("Saving\u2026") : t("Save changes")}</button></form></section>}<section className="panel"><h2>{id ? t("Order details") : t("Order history")}</h2>{query.isPending ? <Loading /> : query.isError ? <ErrorState error={query.error} /> : id ? query.data.find(o => o.id === Number(id)) ? <OrderDetails order={query.data.find(o => o.id === Number(id))} /> : <Empty title={t("Order not found")} text={t("This order is not associated with your account.")} /> : !query.data.length ? <Empty title={t("Your story starts here")} text={t("Your orders will appear here after your first checkout.")}><Link className="btn" to="/products">{t("Explore the collection")}</Link></Empty> : query.data.map(o => <Link className="order-summary" to={`/account/orders/${o.id}`} key={o.id}><div><strong>#{o.id}</strong><small>{new Date(o.createdAt).toLocaleDateString('bs-BA')} · {o.items.length}{t("products")}</small></div><Status status={o.status} />{!isMock && <small>{paymentLabel(o.paymentStatus)}</small>}<strong>{money(o.totalAmount)}</strong><ArrowRight size={17} /></Link>)}</section></div></div></div>;
 }
 export function Checkout() {
   const {
