@@ -235,6 +235,11 @@ public class AiChatService {
             Long userId,
             List<AiChatRequest.ChatTurn> history) {
 
+        // Whole-message small talk needs neither a model nor a tool connection.
+        // Persistence and authorization remain with the existing API/conversation flow.
+        String quickReply = AiSmallTalk.reply(message);
+        if (quickReply != null) return new AiChatResponse(quickReply);
+
         String requestId = UUID.randomUUID().toString();
         var routing = AiToolPolicy.route(message, history);
         AiToolPolicy.Intent intent = routing.intent();

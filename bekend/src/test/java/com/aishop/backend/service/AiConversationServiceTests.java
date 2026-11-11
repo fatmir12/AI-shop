@@ -76,6 +76,36 @@ class AiConversationServiceTests {
         assertEquals("Sačuvan odgovor", service.send(7, 10, "token", new AiChatRequest("na 3", null, null), key).reply());
         verifyNoInteractions(chat, cart);
     }
+    @Test void fastReplyIsSavedInActiveConversationAndFollowupReceivesItsHistory() {
+        own(7);
+        var fast = new AiSmallTalkTests();
+        var realChat = spy(fast.service());
+        var conversations = new AiConversationService(db, realChat, pending, mapper);
+        var prior = List.of(new AiChatRequest.ChatTurn("user", "Treba mi laptop do 1500 KM."),
+                new AiChatRequest.ChatTurn("assistant", "Dostupan je Lenovo ThinkPad E14."));
+        var descending = new ArrayList<>(prior); Collections.reverse(descending);
+        when(db.query(contains("TOP (24)"), any(RowMapper.class), eq(10L)))
+                .thenAnswer(inv -> new ArrayList<>(descending));
+        UUID key = UUID.randomUUID();
+        var response = conversations.send(7, 10, "token", new AiChatRequest("Hvala", null, null), key);
+        assertEquals(AiSmallTalk.reply("Hvala"), response.reply());
+        verify(db).update(contains("'user'"), eq(10L), eq("Hvala"));
+        verify(db).update(contains("'assistant'"), eq(10L), eq(response.reply()),
+                eq(mapper.writeValueAsString(response)), eq(key.toString()));
+        verify(db).update(contains("UPDATE dbo.ai_conversations SET title"), eq("Hvala"), eq(10L));
+        verifyNoInteractions(fast.client, fast.mcp, fast.catalog, fast.add, fast.modify, cart);
+
+        var continued = new ArrayList<>(prior);
+        continued.add(new AiChatRequest.ChatTurn("user", "Hvala"));
+        continued.add(new AiChatRequest.ChatTurn("assistant", response.reply()));
+        descending.clear(); descending.addAll(continued); Collections.reverse(descending);
+        String followup = "A koji je od tih laptopa najjeftiniji?";
+        doReturn(new AiChatResponse("Odgovor iz postojećeg toka"))
+                .when(realChat).chat(followup, "token", 7L, continued);
+        conversations.send(7, 10, "token", new AiChatRequest(followup, null, null), UUID.randomUUID());
+        verify(realChat).chat(followup, "token", 7L, continued);
+        verify(db, never()).queryForObject(contains("INSERT INTO dbo.ai_conversations"), eq(Long.class), anyLong());
+    }
     @Test void deletionRevokesPendingActionsWithoutChangingCart() {
         own(7);
         var action = pending.create(7L, PendingCartActionService.ActionType.UPDATE, null, 91L, 3);
