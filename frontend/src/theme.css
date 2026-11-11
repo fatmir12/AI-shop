@@ -75,7 +75,7 @@
 .storefront-theme.aishop-ui .catalog-filter-toggle{display:none}
 .storefront-theme.aishop-ui .filter-panel{border:1px solid var(--ui-border);border-radius:var(--ui-radius-panel);background:var(--ui-paper)}
 .storefront-theme.aishop-ui .filter-panel h3{color:var(--ui-ink)}
-.storefront-theme.aishop-ui .filter-ai{background:var(--ui-surface);color:var(--ui-ink);border-radius:8px}
+.storefront-theme.aishop-ui .filter-ai{background:var(--ui-surface);color:var(--ui-ink);border-radius:8px;padding:24px 18px;align-items:center;text-align:center}
 .storefront-theme.aishop-ui .filter-ai p{color:var(--ui-muted)}
 .storefront-theme.aishop-ui .filter-ai a{color:var(--ui-ink);min-height:44px;display:inline-flex;align-items:center}
 .storefront-theme.aishop-ui .catalog-toolbar{gap:16px;flex-wrap:wrap;min-height:44px}

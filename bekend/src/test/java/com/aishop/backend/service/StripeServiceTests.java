@@ -62,13 +62,31 @@ class StripeServiceTests {
         bind(); when(gateway.retrieve(anyString())).thenReturn(session("open", "unpaid"));
         assertEquals("UNPAID", service.sessionStatus(7L, "cs_test_order4").paymentStatus());
         assertNull(order.getPaidAt());
+        assertEquals(OrderStatus.PENDING, order.getStatus());
     }
-    @Test void paidConfirmationIsIdempotentAndDoesNotChangeDeliveryStatus() throws Exception {
+    @Test void paidConfirmationIsIdempotentAndConfirmsPendingOrder() throws Exception {
         bind(); when(gateway.retrieve(anyString())).thenReturn(session("complete", "paid"));
         assertEquals("PAID", service.sessionStatus(7L, "cs_test_order4").paymentStatus());
         var paidAt = order.getPaidAt(); service.sessionStatus(7L, "cs_test_order4");
-        assertEquals(paidAt, order.getPaidAt()); assertEquals(OrderStatus.PENDING, order.getStatus());
+        assertEquals(paidAt, order.getPaidAt()); assertEquals(OrderStatus.CONFIRMED, order.getStatus());
         verify(orders, times(1)).saveAndFlush(order);
+    }
+    @Test void alreadyPaidPendingOrderIsConfirmedWithoutChangingPaymentTime() throws Exception {
+        bind(); order.setPaymentStatus("PAID");
+        var paidAt = java.time.LocalDateTime.of(2026, 1, 1, 12, 0);
+        order.setPaidAt(paidAt);
+        when(gateway.retrieve(anyString())).thenReturn(session("complete", "paid"));
+        service.sessionStatus(7L, "cs_test_order4");
+        assertEquals(OrderStatus.CONFIRMED, order.getStatus());
+        assertEquals(paidAt, order.getPaidAt());
+    }
+    @Test void paymentConfirmationPreservesAdvancedAndCancelledOrderStatuses() throws Exception {
+        bind(); when(gateway.retrieve(anyString())).thenReturn(session("complete", "paid"));
+        for (var status : new OrderStatus[] { OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.CANCELLED }) {
+            order.setStatus(status);
+            service.sessionStatus(7L, "cs_test_order4");
+            assertEquals(status, order.getStatus());
+        }
     }
     @Test void mismatchedAmountCurrencyAndMetadataCannotConfirmPayment() throws Exception {
         bind(); Session bad = session("complete", "paid"); bad.setAmountTotal(1L);

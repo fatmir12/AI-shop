@@ -166,9 +166,18 @@ public class StripeService {
                 session.getMetadata() == null ||
                 !order.getId().toString().equals(session.getMetadata().get("orderId")))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Podaci plaćanja ne odgovaraju narudžbi.");
-        if ("paid".equals(session.getPaymentStatus()) && "UNPAID".equals(order.getPaymentStatus())) {
-            order.setPaymentStatus("PAID"); order.setPaidAt(LocalDateTime.now(ZoneOffset.UTC));
-            orders.saveAndFlush(order);
+        if ("paid".equals(session.getPaymentStatus())) {
+            boolean changed = false;
+            if ("UNPAID".equals(order.getPaymentStatus())) {
+                order.setPaymentStatus("PAID");
+                order.setPaidAt(LocalDateTime.now(ZoneOffset.UTC));
+                changed = true;
+            }
+            if ("PAID".equals(order.getPaymentStatus()) && order.getStatus() == OrderStatus.PENDING) {
+                order.setStatus(OrderStatus.CONFIRMED);
+                changed = true;
+            }
+            if (changed) orders.saveAndFlush(order);
         }
     }
 }
