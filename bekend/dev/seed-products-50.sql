@@ -1,0 +1,150 @@
+-- AIShop: 50 DEMO proizvoda iz proizvodi_upute.txt.
+-- RUČNA SKRIPTA: nije Flyway migracija i nije izvršena tokom pripreme.
+-- @Apply=0: pregled bez trajnih izmjena. @Apply=1 tek nakon potvrde vlasnika.
+-- Cijene su predložene demo cijene u BAM, zaliha 10 samo za nove redove.
+-- Postojeći redovi (uključujući cijene/zalihe/slike) nikada se ne ažuriraju.
+-- NULL image_url aktivira postojeći /product-fallback.svg; nema tuđih slika.
+-- Vidjeti seed-products-50-review.md za izvore, SKU ograničenja i provjeru.
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+IF @@TRANCOUNT <> 0 THROW 51010, 'Run this seed outside an existing transaction.', 1;
+DECLARE @Apply bit = 1;
+DECLARE @Seed TABLE (
+ name nvarchar(150) PRIMARY KEY, category_name nvarchar(100) NOT NULL,
+ description nvarchar(1000) NOT NULL, price decimal(12,2) NOT NULL,
+ stock int NOT NULL, image_url nvarchar(500) NULL
+);
+INSERT INTO @Seed (name, category_name, description, price, stock, image_url)
+VALUES
+ (N'Lenovo IdeaPad Slim 3 15', N'Laptopi', N'Serija laptopa za školu i svakodnevni rad; AMD/Intel platforma, memorija i pohrana zavise od tačne varijante. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 899.00, 10, NULL),
+ (N'Acer Aspire 5 A515', N'Laptopi', N'Laptop od 15,6 inča za uredski rad, studiranje i multimediju; serija s Intel Core procesorima. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 1099.00, 10, NULL),
+ (N'ASUS Vivobook 15 X1504', N'Laptopi', N'Serija laptopa s ekranom od 15,6 inča; Intel procesor i ostala konfiguracija zavise od podmodela X1504. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 1199.00, 10, NULL),
+ (N'HP ProBook 450 G10', N'Laptopi', N'Poslovni laptop od 15,6 inča s Intel procesorima 13. generacije i poslovnim sigurnosnim funkcijama. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 1599.00, 10, NULL),
+ (N'Lenovo ThinkPad E14 Gen 5', N'Laptopi', N'Poslovni laptop od 14 inča, dostupan u Intel i AMD varijantama, s kompaktnim kućištem. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 1699.00, 10, NULL),
+ (N'Dell Latitude 5440', N'Laptopi', N'Poslovni laptop od 14 inča s Intel Core procesorima 13. generacije i širokim izborom priključaka. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 1899.00, 10, NULL),
+ (N'ASUS TUF Gaming A15 FA507', N'Laptopi', N'Gaming laptop s AMD Ryzen procesorom i NVIDIA GeForce RTX grafikom; specifikacije zavise od konfiguracije. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 2199.00, 10, NULL),
+ (N'Lenovo Legion 5 16IRX9', N'Laptopi', N'Gaming laptop s ekranom od 16 inča, Intel HX procesorima i NVIDIA RTX grafikom. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 2799.00, 10, NULL),
+ (N'Apple MacBook Air 13 M3', N'Laptopi', N'Laptop s Apple M3 čipom, 13,6-inčnim Liquid Retina ekranom i pasivnim hlađenjem. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 2899.00, 10, NULL),
+ (N'Apple MacBook Pro 14 M4 Pro', N'Laptopi', N'Profesionalni laptop s M4 Pro čipom, 14,2-inčnim Liquid Retina XDR ekranom i Thunderbolt priključcima. Demo ponuda: Tačan proizvođački SKU, CPU/GPU, RAM, SSD, ekran, OS i raspored tastature nisu odabrani.', 4999.00, 10, NULL),
+ (N'Samsung Galaxy A15 4G 128 GB', N'Telefoni', N'Android telefon sa 6,5-inčnim Super AMOLED ekranom, glavnom kamerom od 50 MP i baterijom od 5.000 mAh. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 299.00, 10, NULL),
+ (N'Xiaomi Redmi Note 13 4G 128 GB', N'Telefoni', N'Telefon sa 6,67-inčnim AMOLED ekranom od 120 Hz, glavnom kamerom od 108 MP i baterijom od 5.000 mAh. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 399.00, 10, NULL),
+ (N'Motorola Moto G84 5G 256 GB', N'Telefoni', N'Telefon sa 6,5-inčnim pOLED ekranom od 120 Hz, Snapdragon 695 procesorom i 5G povezivanjem. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 449.00, 10, NULL),
+ (N'Samsung Galaxy A35 5G 128 GB', N'Telefoni', N'Telefon sa 6,6-inčnim Super AMOLED ekranom od 120 Hz, IP67 zaštitom i glavnom kamerom od 50 MP. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 599.00, 10, NULL),
+ (N'Nothing Phone (2a) 128 GB', N'Telefoni', N'Telefon sa 6,7-inčnim AMOLED ekranom, MediaTek Dimensity 7200 Pro procesorom i Glyph svjetlosnim interfejsom. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 649.00, 10, NULL),
+ (N'Google Pixel 8a 128 GB', N'Telefoni', N'Telefon sa 6,1-inčnim OLED ekranom od 120 Hz, Google Tensor G3 procesorom i Google fotografskim funkcijama. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 899.00, 10, NULL),
+ (N'Samsung Galaxy S24 256 GB', N'Telefoni', N'Premium telefon sa 6,2-inčnim Dynamic AMOLED 2X ekranom, kamerom od 50 MP i IP68 zaštitom. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 1299.00, 10, NULL),
+ (N'Apple iPhone 16 128 GB', N'Telefoni', N'Telefon sa 6,1-inčnim Super Retina XDR OLED ekranom, A18 čipom i glavnom kamerom od 48 MP. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 1599.00, 10, NULL),
+ (N'Google Pixel 9 Pro 128 GB', N'Telefoni', N'Premium telefon sa 6,3-inčnim LTPO OLED ekranom, Tensor G4 procesorom i trostrukim sistemom kamera. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 1899.00, 10, NULL),
+ (N'Samsung Galaxy S25 Ultra 256 GB', N'Telefoni', N'Premium telefon sa 6,9-inčnim Dynamic AMOLED 2X ekranom, glavnom kamerom od 200 MP i integrisanom S Pen olovkom. Demo ponuda: Potvrditi regionalni SKU, RAM, SIM/eSIM, boju i navedeni kapacitet pohrane.', 2599.00, 10, NULL),
+ (N'Logitech M90', N'Miševi', N'Jednostavan žični optički miš s USB priključkom i tri tipke. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 19.00, 10, NULL),
+ (N'Logitech M185', N'Miševi', N'Bežični miš s USB nano-prijemnikom, namijenjen svakodnevnom radu. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 35.00, 10, NULL),
+ (N'Microsoft Bluetooth Mouse', N'Miševi', N'Kompaktan bežični miš s Bluetooth povezivanjem i simetričnim oblikom. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 49.00, 10, NULL),
+ (N'Logitech M650 Signature', N'Miševi', N'Bežični miš s tihim klikovima, SmartWheel točkićem i Bluetooth ili Logi Bolt povezivanjem. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 79.00, 10, NULL),
+ (N'Razer DeathAdder Essential', N'Miševi', N'Žični gaming miš s ergonomskim oblikom i optičkim senzorom do 6.400 DPI. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 89.00, 10, NULL),
+ (N'SteelSeries Rival 3', N'Miševi', N'Žični gaming miš s TrueMove Core optičkim senzorom i RGB osvjetljenjem. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 99.00, 10, NULL),
+ (N'HyperX Pulsefire Haste 2', N'Miševi', N'Lagani žični gaming miš s optičkim senzorom do 26.000 DPI i polling rateom do 8.000 Hz. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 139.00, 10, NULL),
+ (N'Logitech G502 HERO', N'Miševi', N'Žični gaming miš s HERO 25K senzorom, podesivim utezima i programabilnim tipkama. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 149.00, 10, NULL),
+ (N'Logitech MX Master 3S', N'Miševi', N'Ergonomski bežični miš s optičkim senzorom do 8.000 DPI, tihim klikovima i MagSpeed točkićem. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 219.00, 10, NULL),
+ (N'Razer Viper V3 Pro', N'Miševi', N'Lagani bežični esports miš s Focus Pro 35K optičkim senzorom. Demo ponuda: Potvrditi tačan SKU, reviziju, boju, veličinu i sadržaj pakovanja/prijemnik.', 349.00, 10, NULL),
+ (N'Logitech K120', N'Tastature', N'Žična USB tastatura pune veličine, namijenjena uredskom i kućnom radu. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 29.00, 10, NULL),
+ (N'Logitech K380', N'Tastature', N'Kompaktna Bluetooth tastatura s podrškom za povezivanje s više uređaja. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 79.00, 10, NULL),
+ (N'Microsoft Designer Compact Keyboard', N'Tastature', N'Tanka Bluetooth tastatura kompaktnog dizajna za produktivnost. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 109.00, 10, NULL),
+ (N'Redragon K552 Kumara', N'Tastature', N'Kompaktna žična mehanička gaming tastatura bez numeričkog dijela. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 119.00, 10, NULL),
+ (N'HyperX Alloy Origins Core', N'Tastature', N'Mehanička TKL gaming tastatura s aluminijskim kućištem i RGB osvjetljenjem. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 189.00, 10, NULL),
+ (N'Keychron K2 V2', N'Tastature', N'Bežična mehanička tastatura rasporeda 75%, s Bluetooth i žičnim povezivanjem. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 199.00, 10, NULL),
+ (N'Logitech G413 SE', N'Tastature', N'Mehanička gaming tastatura pune veličine s taktilnim prekidačima i bijelim osvjetljenjem. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 219.00, 10, NULL),
+ (N'Razer BlackWidow V4 X', N'Tastature', N'Gaming tastatura pune veličine s mehaničkim prekidačima, makro tipkama i RGB osvjetljenjem. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 299.00, 10, NULL),
+ (N'Logitech MX Mechanical', N'Tastature', N'Bežična mehanička tastatura za produktivnost s niskoprofilnim prekidačima i pametnim osvjetljenjem. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 349.00, 10, NULL),
+ (N'Corsair K100 RGB', N'Tastature', N'Premium gaming tastatura s aluminijskim kućištem, RGB osvjetljenjem i dodatnim kontrolama. Demo ponuda: Potvrditi SKU, jezički raspored, prekidače, osvjetljenje i reviziju.', 499.00, 10, NULL),
+ (N'JBL Tune 500', N'Slušalice', N'Žične on-ear slušalice s 3,5 mm priključkom i JBL Pure Bass zvukom. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 49.00, 10, NULL),
+ (N'Sony MDR-ZX110', N'Slušalice', N'Lagane žične on-ear slušalice sa sklopivim dizajnom i 30 mm zvučničkim jedinicama. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 59.00, 10, NULL),
+ (N'JBL Tune 510BT', N'Slušalice', N'Bežične on-ear Bluetooth slušalice s deklarisanim trajanjem baterije do 40 sati. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 99.00, 10, NULL),
+ (N'Anker Soundcore Life Q20', N'Slušalice', N'Bežične over-ear slušalice s aktivnim poništavanjem buke i Bluetooth povezivanjem. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 119.00, 10, NULL),
+ (N'HyperX Cloud II', N'Slušalice', N'Žične gaming slušalice s 53 mm zvučničkim jedinicama i odvojivim mikrofonom. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 169.00, 10, NULL),
+ (N'Samsung Galaxy Buds FE', N'Slušalice', N'Bežične in-ear slušalice s aktivnim poništavanjem buke i Bluetooth povezivanjem. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 179.00, 10, NULL),
+ (N'Sony WH-CH720N', N'Slušalice', N'Bežične over-ear slušalice s aktivnim poništavanjem buke i deklarisanom autonomijom do 35 sati uz ANC. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 219.00, 10, NULL),
+ (N'Apple AirPods 4 ANC', N'Slušalice', N'Bežične slušalice otvorenog dizajna s aktivnim poništavanjem buke, H2 čipom i USB-C kućištem. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 349.00, 10, NULL),
+ (N'Bose QuietComfort Ultra Headphones', N'Slušalice', N'Bežične over-ear slušalice s aktivnim poništavanjem buke i Immersive Audio funkcijom; prije objave odabrati generaciju. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 649.00, 10, NULL),
+ (N'Sony WH-1000XM5', N'Slušalice', N'Premium bežične over-ear slušalice s aktivnim poništavanjem buke, LDAC podrškom i autonomijom do 30 sati uz ANC. Demo ponuda: Potvrditi SKU, generaciju, boju i sadržaj pakovanja.', 699.00, 10, NULL);
+
+-- Canonical names plus explicit conservative legacy aliases.
+-- Normalization is case/accent insensitive and ignores spaces, hyphens and parentheses.
+-- This is name-based deduplication, NOT a claim of exact SKU equivalence.
+DECLARE @Aliases TABLE (seed_name nvarchar(150), model_key nvarchar(200), is_prefix bit);
+INSERT INTO @Aliases
+SELECT name, LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name,N' ',N''),N'-',N''),N'(',N''),N')',N'')), 0 FROM @Seed;
+INSERT INTO @Aliases VALUES
+ (N'Lenovo ThinkPad E14 Gen 5', N'lenovothinkpade14', 1),
+ (N'Keychron K2 V2', N'keychronk2wireless', 1),
+ (N'Keychron K2 V2', N'keychronk2version2', 1),
+ (N'Logitech M650 Signature', N'logitechsignaturem650', 1),
+ (N'Apple AirPods 4 ANC', N'appleairpods4withactivenoisecancellation', 0);
+
+IF (SELECT COUNT(*) FROM @Seed) <> 50 THROW 51011, 'Expected 50 seed products.', 1;
+IF EXISTS (SELECT category_name FROM @Seed GROUP BY category_name HAVING COUNT(*) <> 10)
+ THROW 51012, 'Expected 10 products per category.', 1;
+IF EXISTS (
+ SELECT s.category_name FROM @Seed s LEFT JOIN dbo.categories c
+ ON c.name COLLATE Latin1_General_100_CI_AI = s.category_name COLLATE Latin1_General_100_CI_AI
+ GROUP BY s.category_name HAVING COUNT(DISTINCT c.id) <> 1
+) THROW 51013, 'Missing or ambiguous categories. Apply existing Flyway migrations and review taxonomy first.', 1;
+
+BEGIN TRY
+ IF @Apply=1
+ BEGIN
+  BEGIN TRANSACTION;
+  -- Serialize inspection and insert; products.name has no unique constraint.
+  DECLARE @LockedRows bigint;
+  SELECT @LockedRows=COUNT_BIG(*) FROM dbo.products WITH (TABLOCKX, HOLDLOCK);
+ END;
+ DECLARE @Matches TABLE (seed_name nvarchar(150), existing_id bigint, existing_name nvarchar(150), existing_category nvarchar(100));
+ INSERT INTO @Matches
+ SELECT DISTINCT a.seed_name, p.id, p.name, c.name
+ FROM dbo.products p JOIN dbo.categories c ON c.id=p.category_id
+ CROSS APPLY (SELECT LOWER(REPLACE(REPLACE(REPLACE(REPLACE(p.name,N' ',N''),N'-',N''),N'(',N''),N')',N'')) AS model_key) k
+ JOIN @Aliases a ON
+  k.model_key COLLATE Latin1_General_100_CI_AI = a.model_key COLLATE Latin1_General_100_CI_AI
+  OR (a.is_prefix=1 AND k.model_key COLLATE Latin1_General_100_CI_AI LIKE a.model_key COLLATE Latin1_General_100_CI_AI + N'%');
+
+ -- Review exactly what will be skipped. A legacy alias requires SKU review.
+ SELECT s.category_name, s.name AS requested_name, s.price AS demo_price_BAM,
+  CASE WHEN m.existing_id IS NULL THEN 'WOULD_INSERT' ELSE 'SKIP_EXISTING_OR_REVIEW_SKU' END AS [plan],
+  m.existing_id, m.existing_name, m.existing_category
+ FROM @Seed s LEFT JOIN @Matches m ON m.seed_name=s.name
+ ORDER BY s.category_name,s.name,m.existing_id;
+
+ DECLARE @Inserted TABLE(id bigint, name nvarchar(150));
+ IF @Apply=1
+ BEGIN
+  INSERT INTO dbo.products(category_id,name,description,price,stock,image_url)
+  OUTPUT inserted.id, inserted.name INTO @Inserted
+  SELECT c.id,s.name,s.description,s.price,s.stock,s.image_url
+  FROM @Seed s JOIN dbo.categories c ON c.name COLLATE Latin1_General_100_CI_AI=s.category_name COLLATE Latin1_General_100_CI_AI
+  WHERE NOT EXISTS (SELECT 1 FROM @Matches m WHERE m.seed_name=s.name);
+  IF (SELECT COUNT(*) FROM @Inserted) <> (SELECT COUNT(*) FROM @Seed s WHERE NOT EXISTS (SELECT 1 FROM @Matches m WHERE m.seed_name=s.name))
+   THROW 51014, 'Insert count differs from the reviewed plan; category data may have changed. Transaction rolled back.', 1;
+  COMMIT TRANSACTION;
+ END;
+ SELECT @Apply AS applied, (SELECT COUNT(*) FROM @Seed) AS requested,
+  (SELECT COUNT(DISTINCT seed_name) FROM @Matches) AS skipped,
+  (SELECT COUNT(*) FROM @Inserted) AS inserted;
+ SELECT * FROM @Inserted ORDER BY id;
+
+ -- Total real products per category (not an assertion that each must equal 10).
+ SELECT c.name AS category_name, COUNT(p.id) AS product_count
+ FROM dbo.categories c LEFT JOIN dbo.products p ON p.category_id=c.id
+ GROUP BY c.id,c.name ORDER BY c.name;
+ -- Normalized name duplicates, including cross-category conflicts.
+ SELECT LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name,N' ',N''),N'-',N''),N'(',N''),N')',N'')) COLLATE Latin1_General_100_CI_AI AS model_key,
+  COUNT(*) AS duplicate_count, MIN(id) AS first_id, MAX(id) AS last_id
+ FROM dbo.products
+ GROUP BY LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name,N' ',N''),N'-',N''),N'(',N''),N')',N'')) COLLATE Latin1_General_100_CI_AI
+ HAVING COUNT(*)>1;
+ -- Alias-family duplicates / ambiguous existing records need manual SKU review.
+ SELECT seed_name, COUNT(DISTINCT existing_id) AS existing_candidates
+ FROM @Matches GROUP BY seed_name HAVING COUNT(DISTINCT existing_id)>1;
+END TRY
+BEGIN CATCH
+ IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+ THROW;
+END CATCH;
